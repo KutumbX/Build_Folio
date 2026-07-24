@@ -5,818 +5,832 @@ import React, {
   useEffect,
   useState,
   useCallback,
-  memo,
 } from "react";
-import { motion, type Variants } from "framer-motion";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import gsap from "gsap";
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // ─────────────────────────────────────────────────────────────
-// Constants
+// Theme
 // ─────────────────────────────────────────────────────────────
-const ACCENT = "#c6f806";
-const BLUE_GLOW = "#c6f806";
-const CYAN_GLOW = "#ffffff";
-const HEAD_MODEL_URL =
-  "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/LeePerrySmith/LeePerrySmith.glb";
+const LIME = "#c6f806";
 
-// ─────────────────────────────────────────────────────────────
-// Glitch vertex shader
-// ─────────────────────────────────────────────────────────────
-const glitchVertexShader = `
-  uniform float uTime;
-  uniform float uGlitchIntensity;
-  varying vec3 vNormal;
-  varying vec3 vPosition;
-  varying vec2 vUv;
+// Crosshair + marks — positions extracted from bg.png
+const PLUS_MARKS = [
+  { x: "7%", y: "55%" }, { x: "12%", y: "82%" },
+  { x: "22%", y: "42%" }, { x: "32%", y: "75%" },
+  { x: "38%", y: "34%" }, { x: "44%", y: "65%" },
+  { x: "52%", y: "28%" }, { x: "60%", y: "80%" },
+  { x: "68%", y: "42%" }, { x: "78%", y: "25%" },
+  { x: "84%", y: "70%" }, { x: "15%", y: "68%" },
+  { x: "55%", y: "90%" }, { x: "25%", y: "22%" },
+  { x: "90%", y: "48%" }, { x: "48%", y: "85%" },
+];
 
-  float hash(float n) { return fract(sin(n) * 43758.5453123); }
-
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    vPosition = position;
-    vUv = uv;
-
-    vec3 pos = position;
-
-    // Sliced fragmentation offsets
-    float sliceY = floor(pos.y * 10.0) / 10.0;
-    float slice = step(0.90, sin(sliceY * 30.0 + uTime * 4.0));
-    pos.x += slice * uGlitchIntensity * hash(uTime + sliceY) * 0.25;
-    pos.z += slice * uGlitchIntensity * hash(uTime - sliceY) * 0.15;
-
-    // Concrete rough micro displacement
-    float microNoise = hash(pos.x + pos.y * 37.0 + pos.z * 11.0);
-    pos += normal * microNoise * 0.005;
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
+// Waveform bar heights for AI_UPLINK
+const WAVE_BARS = [0.5, 0.8, 1, 0.6, 0.9, 0.4, 0.7, 1, 0.5, 0.85, 0.6, 0.9, 0.45, 0.7, 0.8, 1, 0.5, 0.65, 0.9, 0.4];
 
 // ─────────────────────────────────────────────────────────────
-// Glitch fragment shader — concrete + wireframe + lime rim + glitch blocks
+// Custom hook: Removes fake checkerboard grid pixels automatically
 // ─────────────────────────────────────────────────────────────
-const glitchFragmentShader = `
-  uniform float uTime;
-  uniform float uGlitchIntensity;
-  uniform vec3 uColor;
-  uniform vec3 uGlowColor;
-  varying vec3 vNormal;
-  varying vec3 vPosition;
-  varying vec2 vUv;
-
-  float hash3(vec3 p) {
-    return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453123);
-  }
-
-  void main() {
-    // 1. Shaded Concrete / Photogrammetry Base (Grayscale)
-    float diffuse = max(dot(vNormal, vec3(0.5, 0.8, 1.0)), 0.0);
-    float ambient = 0.2;
-    float noiseVal = hash3(floor(vPosition * 40.0)) * 0.12 + hash3(floor(vPosition * 100.0)) * 0.08;
-    vec3 concreteBase = vec3(0.45 + noiseVal) * (diffuse * 0.8 + ambient);
-
-    // 2. Wireframe Edges (Digital Overlay)
-    float edgeY = 1.0 - smoothstep(0.0, 0.02, abs(fract(vPosition.y * 60.0) - 0.5));
-    float edgeX = 1.0 - smoothstep(0.0, 0.02, abs(fract(vPosition.x * 60.0) - 0.5));
-    float edgeZ = 1.0 - smoothstep(0.0, 0.02, abs(fract(vPosition.z * 60.0) - 0.5));
-    float edge = clamp(edgeY + edgeX + edgeZ, 0.0, 1.0);
-    vec3 wireframeColor = vec3(0.8) * edge * 0.5;
-
-    // 3. CRT Scanline overlay on texture
-    float scanLine = sin(vPosition.y * 220.0 + uTime * 4.0) * 0.08 + 0.92;
-
-    // Combine base grayscale look
-    vec3 finalColor = concreteBase * scanLine + wireframeColor;
-
-    // 4. Lime Green / Yellow Glitch blocks (Digital Corruption)
-    float glitchBar = step(0.94, sin(vPosition.y * 14.0 + uTime * 6.0));
-    float glitchNoise = hash3(floor(vPosition * 15.0 + uTime * 0.5));
-    float glitchActive = glitchBar * glitchNoise * uGlitchIntensity;
-    
-    // Inject neon green glitch blocks directly
-    vec3 limeNeon = vec3(0.78, 0.97, 0.02);
-    finalColor = mix(finalColor, limeNeon * 1.5, step(0.4, glitchActive));
-
-    // 5. Fresnel Rim Light (Subtle Lime Glow)
-    vec3 viewDir = normalize(cameraPosition - vPosition);
-    float fresnel = pow(1.0 - max(dot(viewDir, vNormal), 0.0), 8.0);
-    vec3 rimLight = limeNeon * fresnel * 0.45;
-    finalColor += rimLight;
-
-    float alpha = 0.85 + edge * 0.15;
-    gl_FragColor = vec4(finalColor, alpha);
-  }
-`;
-
-// ─────────────────────────────────────────────────────────────
-// Particle field vertex/fragment shaders
-// ─────────────────────────────────────────────────────────────
-const particleVertexShader = `
-  attribute float aScale;
-  attribute float aAlpha;
-  uniform float uTime;
-  varying float vAlpha;
-
-  void main() {
-    vAlpha = aAlpha;
-    vec3 pos = position;
-    // Slow drifting animation
-    pos.y += sin(uTime * 0.4 + position.x * 3.0) * 0.12;
-    pos.x += cos(uTime * 0.2 + position.z * 3.0) * 0.08;
-    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
-    // Tiny point sizes for fine static noise
-    gl_PointSize = aScale * (24.0 / -mvPos.z);
-    gl_Position = projectionMatrix * mvPos;
-  }
-`;
-
-const particleFragmentShader = `
-  varying float vAlpha;
-  uniform vec3 uColor;
-
-  void main() {
-    // Sharp square pixel block for digital noise look
-    gl_FragColor = vec4(uColor, vAlpha * 0.65);
-  }
-`;
-
-// ─────────────────────────────────────────────────────────────
-// HUD overlay data component (memoized)
-// ─────────────────────────────────────────────────────────────
-interface HudCoords {
-  x: string;
-  y: string;
-  z: string;
-}
-
-const HudOverlay = memo(function HudOverlay({
-  coords,
-  scanProgress,
-}: {
-  coords: HudCoords;
-  scanProgress: number;
-}) {
-  return (
-    <div className="absolute inset-0 pointer-events-none font-mono select-none z-10">
-      {/* Background Tech Grid Crosshairs (Plus signs) */}
-      <div className="absolute top-[10%] left-[20%] text-[#c6f806]/40 text-xs font-bold">+</div>
-      <div className="absolute top-[25%] left-[80%] text-[#c6f806]/40 text-xs font-bold">+</div>
-      <div className="absolute top-[75%] left-[30%] text-[#c6f806]/40 text-xs font-bold">+</div>
-      <div className="absolute top-[60%] left-[85%] text-[#c6f806]/40 text-xs font-bold">+</div>
-      <div className="absolute top-[45%] left-[15%] text-[#c6f806]/40 text-xs font-bold">+</div>
-
-      {/* Grid lines spanning across the HUD container */}
-      <div className="absolute inset-0 opacity-[0.03] border-l border-r border-[#c6f806]/30 mx-10 sm:mx-16" />
-      <div className="absolute inset-x-0 top-16 opacity-[0.03] border-b border-[#c6f806]/30" />
-      <div className="absolute inset-x-0 bottom-16 opacity-[0.03] border-b border-[#c6f806]/30" />
-
-      {/* Top-left: Rendering label & progress */}
-      <div className="absolute top-4 left-6 md:top-8 md:left-8 text-[10px] md:text-xs text-zinc-500 space-y-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[#c6f806] font-bold">&gt;</span>
-          <span className="text-zinc-300 font-bold uppercase tracking-wider">RENDERING...</span>
-        </div>
-        <div className="text-zinc-500 font-bold tracking-wider">{scanProgress}%</div>
-      </div>
-
-      {/* Top-right: Globe wireframe icon & crosshairs */}
-      <div className="absolute top-4 right-6 md:top-8 md:right-8 flex items-center gap-6">
-        {/* Globe icon */}
-        <div className="text-zinc-500 opacity-60">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c6f806" strokeWidth="1" className="opacity-80">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="2" y1="12" x2="22" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-          </svg>
-        </div>
-        {/* Neon Green Plus sign */}
-        <div className="text-[#c6f806] text-sm font-bold opacity-80">+</div>
-      </div>
-
-      {/* Middle-left: /01 indicator and vertical barcode */}
-      <div className="absolute left-6 md:left-8 top-[20%] flex flex-col items-start gap-4">
-        {/* /01 */}
-        <div className="text-[#c6f806] text-base font-black tracking-widest">
-          /01
-        </div>
-
-        {/* Scattered green blocks */}
-        <div className="flex flex-col gap-1 my-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="w-5 h-1.5 rounded-sm"
-              style={{
-                backgroundColor: ACCENT,
-                opacity: 0.7 + i * 0.15,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Vertical barcode/stripes */}
-        <div className="w-6 h-36 md:h-48 flex flex-col gap-[2px] opacity-40 border-l border-zinc-800 pl-1">
-          {[...Array(24)].map((_, i) => (
-            <div
-              key={i}
-              className="h-[2px] bg-white"
-              style={{
-                width: `${[16, 24, 8, 20, 12, 4, 18, 10, 22, 14, 6, 24][i % 12]}px`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom-right: Structured Cyber Coordinate Box */}
-      <div className="absolute bottom-[20%] right-6 md:right-8 z-20">
-        <div className="border border-[#c6f806]/40 bg-zinc-950/90 bg-gradient-to-br from-[#c6f806]/5 to-transparent px-4 py-3 min-w-[140px] shadow-[0_0_15px_rgba(198,248,6,0.05)]">
-          <div className="text-[9px] text-[#c6f806]/50 mb-2 font-bold tracking-widest uppercase border-b border-[#c6f806]/10 pb-1">
-            SYS_REF_POS
-          </div>
-          <div className="space-y-1 font-mono text-[10px] md:text-xs">
-            <div className="flex justify-between gap-4">
-              <span className="text-[#c6f806]/60">X_</span>
-              <span className="text-[#c6f806] font-bold tabular-nums">{coords.x}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-[#c6f806]/60">Y_</span>
-              <span className="text-[#c6f806] font-bold tabular-nums">{coords.y}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-[#c6f806]/60">Z_</span>
-              <span className="text-[#c6f806] font-bold tabular-nums">{coords.z}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom-right corner label: //SCN_01 */}
-      <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 text-[10px] text-zinc-500 tracking-widest font-bold">
-        {"//SCN_01"}
-      </div>
-
-      {/* Outer borders and scan line details */}
-      <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-[#c6f806]/30" />
-      <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-[#c6f806]/30" />
-      <div className="absolute bottom-2 left-2 w-4 h-4 border-b border-l border-[#c6f806]/30" />
-      <div className="absolute bottom-2 right-2 w-4 h-4 border-b border-r border-[#c6f806]/30" />
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────
-// CRT / Scan-line overlay (CSS-driven, memoized)
-// ─────────────────────────────────────────────────────────────
-const ScanlineOverlay = memo(function ScanlineOverlay() {
-  return (
-    <div className="absolute inset-0 pointer-events-none z-20 mix-blend-overlay opacity-[0.03]">
-      <div
-        className="w-full h-full"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)",
-        }}
-      />
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────
-// Animated gradient background (memoized)
-// ─────────────────────────────────────────────────────────────
-const AnimatedBackground = memo(function AnimatedBackground() {
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden bg-black select-none">
-      {/* Base Dark Graphite Canvas */}
-      <div className="absolute inset-0 bg-[#060607]" />
-
-      {/* Fine grid (dark graphite) */}
-      <div
-        className="absolute inset-0 opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-          backgroundSize: "15px 15px",
-        }}
-      />
-
-      {/* Engineering grid (lime-green) */}
-      <div
-        className="absolute inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(198,248,6,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(198,248,6,0.15) 1px, transparent 1px)",
-          backgroundSize: "90px 90px",
-        }}
-      />
-
-      {/* Technical guidelines and grid ticks */}
-      <svg className="absolute inset-0 w-full h-full opacity-[0.02] stroke-[#c6f806]" strokeWidth="0.5">
-        <line x1="0" y1="0" x2="100%" y2="100%" strokeDasharray="5,5" />
-        <line x1="100%" y1="0" x2="0" y2="100%" strokeDasharray="5,5" />
-      </svg>
-
-      {/* Noise grain */}
-      <div
-        className="absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Technical coordinate references */}
-      <div className="absolute top-[8%] left-[5%] opacity-25 text-[8px] text-zinc-600 font-mono tracking-widest">
-        GRID_UNIT: 90MM // REF_AXIS: GEO_GRID_A
-      </div>
-    </div>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────
-// Button component with compress/expand micro-interaction
-// ─────────────────────────────────────────────────────────────
-function CyberButton({
-  children,
-  primary = false,
-  href = "#",
-}: {
-  children: React.ReactNode;
-  primary?: boolean;
-  href?: string;
-}) {
-  return (
-    <motion.a
-      href={href}
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-      className={`
-        inline-flex items-center gap-2 px-6 py-3 text-xs font-black uppercase tracking-widest
-        border cursor-pointer transition-all duration-300 select-none font-mono
-        ${
-          primary
-            ? `bg-[${ACCENT}] text-black border-[${ACCENT}] shadow-[0_0_20px_rgba(198,248,6,0.3)] hover:shadow-[0_0_35px_rgba(198,248,6,0.5)]`
-            : "bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-white"
-        }
-      `}
-      style={
-        primary
-          ? {
-              backgroundColor: ACCENT,
-              borderColor: ACCENT,
-              color: "#000",
-              boxShadow: `0 0 20px rgba(198,248,6,0.3)`,
-            }
-          : undefined
-      }
-    >
-      {children}
-    </motion.a>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// Three.js Canvas hook — sets up scene, head model, particles
-// ─────────────────────────────────────────────────────────────
-function useThreeCanvas(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  containerRef: React.RefObject<HTMLDivElement | null>,
-  mouseRef: React.RefObject<{ x: number; y: number }>
-) {
-  const animFrameRef = useRef<number>(0);
-  const coordsRef = useRef<HudCoords>({ x: "0.0000", y: "0.0000", z: "0.0000" });
-  const [coords, setCoords] = useState<HudCoords>({ x: "0.0000", y: "0.0000", z: "0.0000" });
-  const [scanProgress, setScanProgress] = useState(0);
+function useCleanRobotImage(src: string) {
+  const [cleanedSrc, setCleanedSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+    if (typeof window === "undefined") return;
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
 
-    const setSize = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    };
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      canvas.width = w;
+      canvas.height = h;
 
-    // Scene
-    const scene = new THREE.Scene();
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(
-      40,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      100
-    );
-    camera.position.set(0, 0, 5);
+      ctx.drawImage(img, 0, 0);
+      const imgData = ctx.getImageData(0, 0, w, h);
+      const data = imgData.data;
 
-    setSize();
+      // Identify neutral gray/white checkerboard pixels
+      const isCheckerboard = (r: number, g: number, b: number) => {
+        const maxC = Math.max(r, g, b);
+        const minC = Math.min(r, g, b);
+        const sat = maxC - minC;
+        return sat < 24 && minC > 115;
+      };
 
-    // ── Lights ──
-    const ambientLight = new THREE.AmbientLight(0x222222, 0.6);
-    scene.add(ambientLight);
+      const visited = new Uint8Array(w * h);
+      const queue: number[] = [];
 
-    // Key light (cinematic cold white)
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    keyLight.position.set(3, 4, 5);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(1024, 1024);
-    scene.add(keyLight);
+      // Add all outer border pixels to start flood fill
+      for (let x = 0; x < w; x++) {
+        queue.push(x, 0);
+        queue.push(x, h - 1);
+      }
+      for (let y = 0; y < h; y++) {
+        queue.push(0, y);
+        queue.push(w - 1, y);
+      }
 
-    // Rim light (subtle lime rim light from behind)
-    const rimLight = new THREE.DirectionalLight(0xc6f806, 1.8);
-    rimLight.position.set(-3, 2, -3);
-    scene.add(rimLight);
+      let head = 0;
+      while (head < queue.length) {
+        const cx = queue[head++];
+        const cy = queue[head++];
+        const idx = cy * w + cx;
 
-    // Fill light (soft gray fill light)
-    const fillLight = new THREE.PointLight(0x444444, 1.2, 15);
-    fillLight.position.set(0, -3, 3);
-    scene.add(fillLight);
+        if (visited[idx]) continue;
+        visited[idx] = 1;
 
-    // Halo removed per layout request
+        const p = idx * 4;
+        const r = data[p];
+        const g = data[p + 1];
+        const b = data[p + 2];
 
-    // ── Floating Particles ──
-    const particleCount = 300;
-    const pPositions = new Float32Array(particleCount * 3);
-    const pScales = new Float32Array(particleCount);
-    const pAlphas = new Float32Array(particleCount);
-    for (let i = 0; i < particleCount; i++) {
-      pPositions[i * 3] = (Math.random() - 0.5) * 8;
-      pPositions[i * 3 + 1] = (Math.random() - 0.5) * 8;
-      pPositions[i * 3 + 2] = (Math.random() - 0.5) * 6 - 1;
-      pScales[i] = Math.random() * 3 + 0.5;
-      pAlphas[i] = Math.random() * 0.8 + 0.2;
-    }
-    const particleGeo = new THREE.BufferGeometry();
-    particleGeo.setAttribute("position", new THREE.BufferAttribute(pPositions, 3));
-    particleGeo.setAttribute("aScale", new THREE.BufferAttribute(pScales, 1));
-    particleGeo.setAttribute("aAlpha", new THREE.BufferAttribute(pAlphas, 1));
+        if (isCheckerboard(r, g, b)) {
+          data[p + 3] = 0; // Set alpha to 0
 
-    const particleMat = new THREE.ShaderMaterial({
-      vertexShader: particleVertexShader,
-      fragmentShader: particleFragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: new THREE.Color(0x888888) },
-      },
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-    const particles = new THREE.Points(particleGeo, particleMat);
-    scene.add(particles);
-
-    // ── Head Model ──
-    const headUniforms = {
-      uTime: { value: 0 },
-      uGlitchIntensity: { value: 0.5 },
-      uColor: { value: new THREE.Color(CYAN_GLOW) },
-      uGlowColor: { value: new THREE.Color(BLUE_GLOW) },
-    };
-
-    const headMaterial = new THREE.ShaderMaterial({
-      vertexShader: glitchVertexShader,
-      fragmentShader: glitchFragmentShader,
-      uniforms: headUniforms,
-      transparent: true,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-
-    let headMesh: THREE.Mesh | null = null;
-
-    // Try loading the model, fallback to a sphere
-    const loader = new GLTFLoader();
-    loader.load(
-      HEAD_MODEL_URL,
-      (gltf) => {
-        gltf.scene.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-            mesh.material = headMaterial;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            headMesh = mesh;
-          }
-        });
-        gltf.scene.scale.setScalar(0.22);
-        gltf.scene.position.set(0, -0.3, 0);
-        scene.add(gltf.scene);
-        setScanProgress(100);
-      },
-      (progress) => {
-        if (progress.total > 0) {
-          setScanProgress(Math.round((progress.loaded / progress.total) * 100));
+          if (cx > 0) queue.push(cx - 1, cy);
+          if (cx < w - 1) queue.push(cx + 1, cy);
+          if (cy > 0) queue.push(cx, cy - 1);
+          if (cy < h - 1) queue.push(cx, cy + 1);
         }
-      },
-      () => {
-        // Fallback: procedural icosahedron head
-        const fallbackGeo = new THREE.IcosahedronGeometry(1.2, 4);
-        const fallbackMesh = new THREE.Mesh(fallbackGeo, headMaterial);
-        fallbackMesh.position.set(0, 0, 0);
-        fallbackMesh.castShadow = true;
-        fallbackMesh.receiveShadow = true;
-        scene.add(fallbackMesh);
-        headMesh = fallbackMesh;
-        setScanProgress(100);
-      }
-    );
-
-    // ── Animation loop ──
-    const clock = new THREE.Clock();
-    let coordsThrottle = 0;
-
-    const animate = () => {
-      animFrameRef.current = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
-      const mouse = mouseRef.current;
-
-      // Update uniforms
-      headUniforms.uTime.value = elapsed;
-      particleMat.uniforms.uTime.value = elapsed;
-
-      // Mouse-driven glitch intensity
-      if (mouse) {
-        const dist = Math.sqrt(mouse.x * mouse.x + mouse.y * mouse.y);
-        headUniforms.uGlitchIntensity.value = THREE.MathUtils.lerp(
-          headUniforms.uGlitchIntensity.value,
-          0.3 + dist * 0.8,
-          0.05
-        );
       }
 
-      // Slow head rotation + mouse follow
-      if (headMesh) {
-        const parent = headMesh.parent || headMesh;
-        parent.rotation.y = elapsed * 0.15 + (mouse?.x || 0) * 0.3;
-        parent.rotation.x = (mouse?.y || 0) * 0.15;
-      }
-
-      // Halo pulse animation removed
-
-      // Throttled coordinate updates (15 fps for DOM)
-      coordsThrottle++;
-      if (coordsThrottle % 4 === 0) {
-        const newCoords = {
-          x: ((mouse?.x || 0) * 56.1749).toFixed(4),
-          y: ((mouse?.y || 0) * -86.7676).toFixed(4),
-          z: (Math.sin(elapsed) * 46.6827).toFixed(4),
-        };
-        coordsRef.current = newCoords;
-        setCoords(newCoords);
-      }
-
-      renderer.render(scene, camera);
+      ctx.putImageData(imgData, 0, 0);
+      setCleanedSrc(canvas.toDataURL("image/png"));
     };
-    animate();
+  }, [src]);
 
-    // Resize handler
-    const onResize = () => setSize();
-    window.addEventListener("resize", onResize);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener("resize", onResize);
-      cancelAnimationFrame(animFrameRef.current);
-      renderer.dispose();
-      scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((m) => m.dispose());
-          } else {
-            obj.material.dispose();
-          }
-        }
-      });
-    };
-  }, [canvasRef, containerRef, mouseRef]);
-
-  return { coords, scanProgress };
+  return cleanedSrc;
 }
 
 // ─────────────────────────────────────────────────────────────
-// Text reveal animation variants
-// ─────────────────────────────────────────────────────────────
-const containerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.3,
-    },
-  },
-};
-
-const lineVariants: Variants = {
-  hidden: { y: "110%", opacity: 0 },
-  visible: {
-    y: "0%",
-    opacity: 1,
-    transition: {
-      duration: 0.8,
-      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
-    },
-  },
-};
-
-const fadeUpVariants: Variants = {
-  hidden: { y: 30, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.8,
-      ease: [0, 0, 0.2, 1] as [number, number, number, number],
-    },
-  },
-};
-
-// ─────────────────────────────────────────────────────────────
-// MAIN COMPONENT
+// MAIN HERO SECTION
 // ─────────────────────────────────────────────────────────────
 export default function HeroSection() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const kutumbxRef = useRef<HTMLDivElement>(null);
+  const robotRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const hudRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
-  const headlineRef = useRef<HTMLDivElement>(null);
 
-  const { coords, scanProgress } = useThreeCanvas(
-    canvasRef,
-    canvasContainerRef,
-    mouseRef
-  );
+  const cleanedRobotSrc = useCleanRobotImage("/images/New folder/robot.png");
 
-  // Mouse tracking for 3D scene
+  const [coords, setCoords] = useState({ x: "-1.5104", y: "60.3076", z: "-27.9331" });
+
+  // Live coordinate updates
+  useEffect(() => {
+    let frame = 0;
+    let raf: number;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      frame++;
+      if (frame % 4 !== 0) return;
+      const t = frame * 0.016;
+      const { x: mx, y: my } = mouseRef.current;
+      setCoords({
+        x: (mx * 52.17 + Math.sin(t * 0.3) * 2).toFixed(4),
+        y: (my * -88.77 + Math.cos(t * 0.2) * 2).toFixed(4),
+        z: (Math.sin(t * 0.5) * 46.68).toFixed(4),
+      });
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Mouse parallax on KUTUMBX and Robot
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     mouseRef.current = {
       x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
       y: -((e.clientY - rect.top) / rect.height) * 2 + 1,
     };
+    if (kutumbxRef.current) {
+      const tx = ((e.clientX - rect.left) / rect.width - 0.5) * -8;
+      const ty = ((e.clientY - rect.top) / rect.height - 0.5) * -4;
+      kutumbxRef.current.style.transform = `translate(${tx}px, ${ty}px)`;
+    }
+    if (robotRef.current) {
+      const tx = ((e.clientX - rect.left) / rect.width - 0.5) * -5;
+      const ty = ((e.clientY - rect.top) / rect.height - 0.5) * -3;
+      robotRef.current.style.transform = `translate(calc(-50% + ${tx}px), ${ty}px)`;
+    }
   }, []);
 
-  // GSAP headline animation
+  // GSAP cinematic entrance
   useEffect(() => {
-    if (!headlineRef.current) return;
+    if (typeof window === "undefined") return;
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headlineRef.current,
-        { clipPath: "inset(0 100% 0 0)" },
-        {
-          clipPath: "inset(0 0% 0 0)",
-          duration: 1.2,
-          ease: "power3.inOut",
-          delay: 0.6,
-        }
-      );
-    }, headlineRef);
+      const tl = gsap.timeline({ delay: 0.1 });
+      tl.fromTo(kutumbxRef.current,
+        { opacity: 0, scale: 1.06 },
+        { opacity: 1, scale: 1, duration: 1.4, ease: "power3.out" }, 0);
+      tl.fromTo(robotRef.current,
+        { opacity: 0, y: 35 },
+        { opacity: 1, y: 0, duration: 1.2, ease: "power3.out" }, 0.25);
+      tl.fromTo(statusRef.current,
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.5);
+      tl.fromTo(contentRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 0.7);
+      tl.fromTo(statsRef.current,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 0.85);
+      tl.fromTo(hudRef.current,
+        { opacity: 0, x: 18 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }, 0.9);
+    }, sectionRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      className="relative w-full min-h-screen overflow-hidden font-mono select-none"
-    >
-      {/* Background layers */}
-      <AnimatedBackground />
-      <ScanlineOverlay />
+    <>
+      {/* Global keyframes */}
+      <style>{`
+        @keyframes scanLine {
+          0%   { top: -2px; opacity: 0.8; }
+          90%  { top: 100%; opacity: 0.8; }
+          100% { top: 100%; opacity: 0; }
+        }
+        @keyframes blinkDot {
+          0%, 49%  { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        @keyframes progressFill {
+          from { width: 0%; }
+          to   { width: 100%; }
+        }
+        @keyframes glowBreath {
+          0%, 100% { opacity: 0.75; transform: scale(1); }
+          50%      { opacity: 1;    transform: scale(1.04); }
+        }
+        @keyframes wavePulse {
+          0%, 100% { transform: scaleY(0.3); }
+          50%      { transform: scaleY(1); }
+        }
+      `}</style>
 
-      {/* Main content grid */}
-      <div className="relative z-10 w-full min-h-screen flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-20 lg:py-0 gap-10 lg:gap-0">
-        {/* ─── LEFT: Typography & Content ─── */}
-        <motion.div
-          className="flex-1 flex flex-col justify-center space-y-8 lg:pr-12 w-full lg:w-1/2 z-20"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+      <section
+        ref={sectionRef}
+        id="hero"
+        aria-label="KutumbX Hero"
+        onMouseMove={handleMouseMove}
+        className="relative w-full overflow-hidden font-mono select-none"
+        style={{ height: "100vh", minHeight: "600px", background: "#000" }}
+      >
+
+        {/* ══════════════════════════════════════════
+            LAYER 0 — BACKGROUND SCENE
+        ══════════════════════════════════════════ */}
+
+        {/* Fine lime dot grid — matches bg.png texture */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(198,248,6,0.11) 1px, transparent 1px)`,
+            backgroundSize: "18px 18px",
+            opacity: 0.55,
+          }}
+        />
+
+        {/* Large lime glow bloom — the main light source */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: "28%", top: "38%",
+            width: "52%", height: "58%",
+            background: `radial-gradient(ellipse at center,
+              rgba(198,248,6,0.45) 0%,
+              rgba(198,248,6,0.18) 22%,
+              rgba(198,248,6,0.07) 45%,
+              transparent 70%)`,
+            filter: "blur(55px)",
+            animation: "glowBreath 5s ease-in-out infinite",
+          }}
+        />
+
+        {/* Intense hot-spot core — bright center */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: "50%", top: "62%",
+            width: "16%", height: "18%",
+            transform: "translate(-50%, -50%)",
+            background: `radial-gradient(ellipse at center,
+              rgba(230,255,30,0.95) 0%,
+              rgba(198,248,6,0.55) 35%,
+              transparent 70%)`,
+            filter: "blur(28px)",
+          }}
+        />
+
+        {/* Noise film grain */}
+        <div
+          className="absolute inset-0 opacity-[0.045]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Scattered + crosshair marks */}
+        {PLUS_MARKS.map((p, i) => (
+          <svg
+            key={i}
+            className="absolute pointer-events-none"
+            style={{
+              left: p.x, top: p.y,
+              width: 10, height: 10,
+              opacity: 0.18 + (i % 4) * 0.05,
+            }}
+            viewBox="0 0 10 10"
+          >
+            <line x1="5" y1="0" x2="5" y2="10" stroke={LIME} strokeWidth="0.8" />
+            <line x1="0" y1="5" x2="10" y2="5" stroke={LIME} strokeWidth="0.8" />
+          </svg>
+        ))}
+
+        {/* Horizontal scan line animation */}
+        <div
+          className="absolute left-0 w-full h-[1px] z-[2] pointer-events-none"
+          style={{
+            background: `linear-gradient(to right, transparent, ${LIME}55, ${LIME}88, ${LIME}55, transparent)`,
+            boxShadow: `0 0 6px ${LIME}55`,
+            animation: "scanLine 9s linear infinite",
+          }}
+        />
+
+
+        {/* ══════════════════════════════════════════
+            LAYER 3 — KUTUMBX TYPOGRAPHY (UPPER HERO)
+        ══════════════════════════════════════════ */}
+        <div
+          ref={kutumbxRef}
+          className="absolute left-0 right-0 z-[5] pointer-events-none"
+          style={{
+            top: "13%",
+            opacity: 0,
+            willChange: "transform",
+            transition: "transform 0.35s ease-out",
+          }}
         >
-          {/* Status tag */}
-          <motion.div variants={fadeUpVariants} className="flex items-center gap-3">
-            <span className="relative flex h-2.5 w-2.5">
-              <span
-                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{ backgroundColor: ACCENT }}
+          <span
+            className="w-full font-black uppercase inline-flex items-center justify-center"
+            style={{
+              fontSize: "clamp(88px, 18.2vw, 258px)",
+              color: "#000000ff",
+              WebkitTextStroke: `2px ${LIME}`,
+              /* Subtle halo only — letters stay dark/hollow like bg.png */
+              textShadow: `0 0 18px rgba(198,248,6,0.18), 0 0 40px rgba(198,248,6,0.08)`,
+              letterSpacing: "-0.03em",
+              lineHeight: 0.88,
+              textAlign: "center",
+              paddingLeft: "1.5%",
+              paddingRight: "1.5%",
+            }}
+          >
+            <svg
+              viewBox="0 0 90 120"
+              className="inline-block"
+              style={{
+                height: "0.78em",
+                width: "auto",
+                marginRight: "-0.02em",
+                marginTop: "-0.04em",
+                verticalAlign: "middle",
+                filter: `drop-shadow(0 0 18px rgba(198,248,6,0.18)) drop-shadow(0 0 40px rgba(198,248,6,0.08))`,
+              }}
+            >
+              <path
+                d="M0 0 H22 V46 L54 0 H86 L46 56 L88 120 H56 L22 66 V120 H0 Z"
+                fill="#000000"
+                stroke={LIME}
+                strokeWidth="2.5"
+                strokeLinejoin="miter"
               />
-              <span
-                className="relative inline-flex rounded-full h-2.5 w-2.5"
-                style={{ backgroundColor: ACCENT }}
-              />
-            </span>
-            <span className="text-[10px] md:text-xs tracking-[0.3em] text-zinc-500 uppercase">
+            </svg>
+            <span>UTUMBX</span>
+          </span>
+        </div>
+
+        {/* ══════════════════════════════════════════
+            LAYER 4 — ROBOT CHARACTER (CENTERED CUTOUT)
+        ══════════════════════════════════════════ */}
+        <div
+          ref={robotRef}
+          className="absolute z-[6] pointer-events-none flex items-end justify-center"
+          style={{
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            height: "clamp(460px, 80vh, 960px)",
+            opacity: 0,
+            willChange: "transform",
+            transition: "transform 0.35s ease-out",
+          }}
+        >
+          {/* Lime aura glow behind robot character */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              inset: 0,
+              background: `radial-gradient(ellipse 55% 65% at 50% 60%, rgba(198,248,6,0.15) 0%, transparent 70%)`,
+              filter: "blur(25px)",
+            }}
+          />
+          <Image
+            src={cleanedRobotSrc || "/images/New folder/robot.png"}
+            alt="KutumbX Cyberpunk Robot Character"
+            width={720}
+            height={980}
+            priority
+            unoptimized
+            className="h-full w-auto max-w-none object-contain object-bottom"
+            style={{
+              filter: `drop-shadow(0 0 35px rgba(198,248,6,0.32)) drop-shadow(0 0 80px rgba(198,248,6,0.12)) drop-shadow(0 40px 30px rgba(0,0,0,0.85))`,
+            }}
+          />
+        </div>
+
+
+        {/* ══════════════════════════════════════════
+            LAYER 10 — UI ELEMENTS
+        ══════════════════════════════════════════ */}
+
+        {/* ── STATUS BADGE — top-left ── */}
+        <div
+          ref={statusRef}
+          className="absolute z-[10]"
+          style={{
+            top: "clamp(76px, 11vh, 118px)",
+            left: "clamp(16px, 3%, 48px)",
+            opacity: 0,
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{
+                backgroundColor: LIME,
+                boxShadow: `0 0 8px ${LIME}, 0 0 16px ${LIME}55`,
+                animation: "blinkDot 1.4s step-end infinite",
+              }}
+            />
+            <span
+              className="tracking-[0.28em] uppercase"
+              style={{ color: "#777", fontSize: 11 }}
+            >
               [ STATUS: ACTIVE ]
             </span>
-          </motion.div>
+          </div>
+        </div>
 
-          {/* Headline */}
-          <div ref={headlineRef}>
-            <motion.div variants={containerVariants}>
-              {/* DEVELOPER'S (Line 1 - Reduced Sizing) */}
-              <div className="overflow-hidden">
-                <motion.h1
-                  variants={lineVariants}
-                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black uppercase leading-[0.85] tracking-tight text-white"
-                  style={{
-                    textShadow: `0 0 40px rgba(255,255,255,0.05)`,
-                  }}
-                >
-                  {"DEVELOPER'S"}
-                </motion.h1>
+        {/* ── LIVE / SYS_01 — top-right ── */}
+        <div
+          className="absolute z-[10] hidden sm:block"
+          style={{
+            top: "clamp(76px, 11vh, 118px)",
+            right: "clamp(16px, 3%, 48px)",
+          }}
+        >
+          <div className="relative inline-flex flex-col items-end gap-1">
+            {/* Corner bracket top-right */}
+            <div
+              className="absolute -top-2 -right-2 w-5 h-5 border-t border-r"
+              style={{ borderColor: LIME + "50" }}
+            />
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{
+                      backgroundColor: LIME,
+                      boxShadow: `0 0 8px ${LIME}`,
+                      animation: "blinkDot 1.2s step-end infinite",
+                    }}
+                  />
+                  <span
+                    className="font-bold tracking-widest"
+                    style={{ color: LIME, fontSize: 12 }}
+                  >
+                    LIVE
+                  </span>
+                </div>
+                <span className="tracking-widest" style={{ color: "#555", fontSize: 9 }}>
+                  //SYS_01
+                </span>
               </div>
+              {/* Globe icon */}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.42 }}>
+                <circle cx="12" cy="12" r="9" stroke={LIME} strokeWidth="0.8" />
+                <circle cx="12" cy="12" r="4.5" stroke={LIME} strokeWidth="0.6" />
+                <line x1="3" y1="12" x2="21" y2="12" stroke={LIME} strokeWidth="0.6" />
+                <line x1="12" y1="3" x2="12" y2="21" stroke={LIME} strokeWidth="0.6" />
+              </svg>
+            </div>
+          </div>
+        </div>
 
-              {/* KUTUMB (Line 2 - Bolder Sizing) */}
-              <div className="overflow-hidden">
-                <motion.h1
-                  variants={lineVariants}
-                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black uppercase leading-[0.85] tracking-tight text-transparent"
-                  style={{
-                    WebkitTextStroke: `2px ${ACCENT}`,
-                    textShadow: `0 0 40px rgba(198,248,6,0.15)`,
-                  }}
-                >
-                  KUTUMB
-                </motion.h1>
+        {/* ── CONTENT BLOCK — bottom-left ── */}
+        <div
+          ref={contentRef}
+          className="absolute z-[10]"
+          style={{
+            bottom: "clamp(165px, 24vh, 230px)",
+            left: "clamp(16px, 3%, 48px)",
+            maxWidth: "clamp(240px, 30vw, 390px)",
+            opacity: 0,
+          }}
+        >
+          <p
+            className="text-white leading-snug mb-1"
+            style={{ fontSize: "clamp(14px, 1.45vw, 20px)", fontWeight: 700 }}
+          >
+            Building India&apos;s largest<br />developer ecosystem
+          </p>
+          <p
+            className="leading-relaxed mb-5"
+            style={{ fontSize: "clamp(11px, 1vw, 14px)", color: "#777" }}
+          >
+            powered by{" "}
+            <span style={{ color: LIME, fontWeight: 600 }}>AI, Web3</span>
+            {" "}and<br />immersive technology.
+          </p>
+
+          {/* Buttons */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <motion.a
+              href="#community"
+              id="hero-join-community"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="inline-flex items-center gap-2 uppercase tracking-widest font-black text-black cursor-pointer"
+              style={{
+                backgroundColor: LIME,
+                border: `1px solid ${LIME}`,
+                boxShadow: `0 0 22px rgba(198,248,6,0.38)`,
+                padding: "10px 20px",
+                fontSize: "clamp(9px, 0.85vw, 11px)",
+              }}
+            >
+              JOIN COMMUNITY
+              <span style={{ fontSize: 13 }}>→</span>
+            </motion.a>
+
+            <motion.a
+              href="#labs"
+              id="hero-explore-labs"
+              whileHover={{ scale: 1.04, borderColor: LIME }}
+              whileTap={{ scale: 0.96 }}
+              className="inline-flex items-center gap-2 uppercase tracking-widest font-black text-white cursor-pointer"
+              style={{
+                background: "transparent",
+                border: `1px solid rgba(198,248,6,0.45)`,
+                padding: "10px 20px",
+                fontSize: "clamp(9px, 0.85vw, 11px)",
+                transition: "border-color 0.2s",
+              }}
+            >
+              EXPLORE LABS
+              <span style={{ fontSize: 12 }}>↗</span>
+            </motion.a>
+          </div>
+        </div>
+
+        {/* ── STATS ROW — bottom-left, below content ── */}
+        <div
+          ref={statsRef}
+          className="absolute z-[10] flex items-end gap-8"
+          style={{
+            bottom: "clamp(75px, 11vh, 100px)",
+            left: "clamp(16px, 3%, 48px)",
+            opacity: 0,
+          }}
+        >
+          {[
+            { value: "12K+", label: "DEVELOPERS" },
+            { value: "50+", label: "PROJECTS" },
+            { value: "AI³", label: "POWERED" },
+          ].map(({ value, label }) => (
+            <div key={label} className="flex flex-col">
+              <span
+                className="font-black leading-none"
+                style={{
+                  fontSize: "clamp(24px, 2.8vw, 40px)",
+                  color: LIME,
+                  textShadow: `0 0 18px rgba(198,248,6,0.5)`,
+                }}
+              >
+                {value}
+              </span>
+              <span
+                className="tracking-widest uppercase mt-0.5"
+                style={{ fontSize: 9, color: "#555" }}
+              >
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Circle sonar badge — bottom-far-left ── */}
+        <div
+          className="absolute z-[10] hidden sm:block"
+          style={{
+            bottom: "clamp(36px, 5vh, 55px)",
+            left: "clamp(16px, 3%, 48px)",
+          }}
+        >
+          <svg width="38" height="38" viewBox="0 0 38 38" fill="none" style={{ opacity: 0.45 }}>
+            <circle cx="19" cy="19" r="17" stroke={LIME} strokeWidth="0.8" />
+            <circle cx="19" cy="19" r="11" stroke={LIME} strokeWidth="0.5" opacity="0.6" />
+            <circle cx="19" cy="19" r="5" stroke={LIME} strokeWidth="0.5" opacity="0.5" />
+            <circle cx="19" cy="19" r="2" fill={LIME} />
+          </svg>
+        </div>
+
+        {/* ── RIGHT HUD PANELS ── */}
+        <div
+          ref={hudRef}
+          className="absolute z-[10] hidden md:flex flex-col gap-2.5"
+          style={{
+            right: "clamp(14px, 2.5%, 38px)",
+            top: "50%",
+            transform: "translateY(-12%)",
+            width: "clamp(190px, 18vw, 240px)",
+            opacity: 0,
+          }}
+        >
+          {/* ── SYS_RENDER panel ── */}
+          <div
+            style={{
+              border: `1px solid ${LIME}30`,
+              background: "rgba(0,0,0,0.78)",
+              backdropFilter: "blur(12px)",
+              padding: "12px 14px",
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-2.5">
+              <span style={{ color: LIME, fontSize: 10 }}>▶</span>
+              <span
+                className="font-bold tracking-[0.22em]"
+                style={{ color: LIME, fontSize: 10 }}
+              >
+                SYS_RENDER
+              </span>
+            </div>
+            <div style={{ borderTop: `1px solid ${LIME}20`, marginBottom: 10 }} />
+
+            {/* NET_LATENCY */}
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="tracking-widest" style={{ color: LIME + "60", fontSize: 8 }}>
+                NET_LATENCY
+              </span>
+              <span className="font-bold" style={{ color: LIME, fontSize: 9 }}>100%</span>
+            </div>
+
+            {/* Progress bar */}
+            <div
+              className="w-full mb-3"
+              style={{ height: 2, background: `${LIME}18` }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  background: LIME,
+                  boxShadow: `0 0 8px ${LIME}`,
+                  animation: "progressFill 1.8s ease-out forwards",
+                }}
+              />
+            </div>
+
+            {/* 12ms */}
+            <div
+              className="font-black mb-3"
+              style={{
+                color: LIME,
+                fontSize: "clamp(16px, 1.6vw, 22px)",
+                textShadow: `0 0 10px ${LIME}50`,
+              }}
+            >
+              12ms
+            </div>
+
+            {/* /01 + barcode lines */}
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                className="font-black tracking-widest"
+                style={{ color: LIME, fontSize: 13 }}
+              >
+                /01
+              </span>
+              <div className="flex items-end gap-[2px]">
+                {[14, 22, 10, 18, 26, 8, 20, 14, 22, 10, 18, 24, 12, 20].map((h, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: 2,
+                      height: h * 0.55,
+                      backgroundColor: LIME,
+                      opacity: 0.45,
+                    }}
+                  />
+                ))}
               </div>
-            </motion.div>
+            </div>
+
+            {/* ≡ three bars */}
+            <div className="flex flex-col gap-[3px]">
+              {[1, 0.5, 0.72].map((op, i) => (
+                <div
+                  key={i}
+                  className="w-full"
+                  style={{ height: 1.5, background: LIME, opacity: op * 0.5 }}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Subtitle */}
-          <motion.p
-            variants={fadeUpVariants}
-            className="text-sm md:text-base text-zinc-400 max-w-md leading-relaxed"
-          >
-            <span className="text-white font-bold">THE FUTURE ISN&apos;T MINIMAL.</span>
-            <br />
-            <span className="text-white font-bold">IT&apos;S SYSTEMATIC.</span>
-            <br />
-            <br />
-            <span className="text-zinc-500">
-              A creative digital agency building bold, functional, and
-              unapologetically future&#8209;ready experiences for the machine&nbsp;age.
-            </span>
-          </motion.p>
+          {/* ── AI_UPLINK + SYS_REF_POS side by side ── */}
+          <div className="flex gap-2">
 
-          {/* Action Buttons */}
-          <motion.div
-            variants={fadeUpVariants}
-            className="flex flex-wrap items-center gap-4 pt-2"
-          >
-            <CyberButton primary href="#work">
-              <span>EXPLORE WORK</span>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
+            {/* AI_UPLINK */}
+            <div
+              style={{
+                flex: 1,
+                border: `1px solid ${LIME}28`,
+                background: "rgba(0,0,0,0.78)",
+                backdropFilter: "blur(12px)",
+                padding: "10px 10px",
+              }}
+            >
+              <div
+                className="tracking-widest mb-2"
+                style={{ color: LIME + "60", fontSize: 8 }}
               >
-                <path d="M7 17L17 7M17 7H7M17 7v10" />
-              </svg>
-            </CyberButton>
-            <CyberButton href="#manifesto">VIEW MANIFESTO</CyberButton>
-          </motion.div>
-        </motion.div>
+                AI_UPLINK
+              </div>
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <span
+                  className="font-black"
+                  style={{ color: LIME, fontSize: 11 }}
+                >
+                  LIVE
+                </span>
+                <span
+                  className="rounded-full"
+                  style={{
+                    width: 6, height: 6,
+                    backgroundColor: LIME,
+                    boxShadow: `0 0 5px ${LIME}`,
+                    animation: "blinkDot 1s step-end infinite",
+                    display: "inline-block",
+                  }}
+                />
+              </div>
+              {/* EQ waveform bars */}
+              <div
+                className="flex items-end gap-[1.5px]"
+                style={{ height: 22 }}
+              >
+                {WAVE_BARS.map((h, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: 3,
+                      height: `${h * 100}%`,
+                      backgroundColor: LIME,
+                      opacity: 0.85,
+                      transformOrigin: "bottom",
+                      animation: `wavePulse ${0.48 + i * 0.055}s ease-in-out infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
 
-        {/* ─── RIGHT: 3D Canvas + HUD ─── */}
-        <div
-          ref={canvasContainerRef}
-          className="flex-1 relative w-full lg:w-1/2 h-[50vh] sm:h-[55vh] md:h-[60vh] lg:h-screen"
-        >
-          {/* Three.js canvas */}
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 w-full h-full"
-          />
+            {/* SYS_REF_POS */}
+            <div
+              style={{
+                flex: 1,
+                border: `1px solid ${LIME}32`,
+                background: "rgba(0,0,0,0.82)",
+                backdropFilter: "blur(12px)",
+                padding: "10px 10px",
+              }}
+            >
+              <div
+                className="font-bold tracking-widest mb-2.5"
+                style={{ color: LIME + "60", fontSize: 8 }}
+              >
+                SYS_REF_POS
+              </div>
+              <div className="space-y-1.5">
+                {[
+                  ["X_", coords.x],
+                  ["Y_", coords.y],
+                  ["Z_", coords.z],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex justify-between items-center">
+                    <span style={{ color: LIME + "55", fontSize: 9 }}>{label}</span>
+                    <span
+                      className="font-bold tabular-nums"
+                      style={{ color: LIME, fontSize: 9 }}
+                    >
+                      {val}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          {/* HUD data overlay */}
-          <HudOverlay coords={coords} scanProgress={scanProgress} />
+          </div>
         </div>
-      </div>
 
-      {/* Bottom edge accent */}
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#c6f806]/20 to-transparent z-30" />
-    </section>
+        {/* ── Bottom lime accent line ── */}
+        <div
+          className="absolute bottom-0 left-0 w-full z-[15]"
+          style={{
+            height: 1,
+            background: `linear-gradient(to right, transparent, rgba(198,248,6,0.28), rgba(198,248,6,0.55), rgba(198,248,6,0.28), transparent)`,
+          }}
+        />
+
+        {/* ── Bottom-right hatch marks //// ── */}
+        <svg
+          className="absolute z-[10] pointer-events-none"
+          style={{ bottom: 10, right: 16, opacity: 0.28 }}
+          width="80" height="10" viewBox="0 0 80 10"
+        >
+          {[0, 8, 16, 24, 32, 40, 48, 56, 64, 72].map((x) => (
+            <line
+              key={x}
+              x1={x} y1="0" x2={x + 6} y2="10"
+              stroke={LIME} strokeWidth="1.3"
+            />
+          ))}
+        </svg>
+
+        {/* ── Accessibility skip link ── */}
+        <a
+          href="#community"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-black focus:text-white focus:text-sm"
+        >
+          Skip to main content
+        </a>
+
+      </section>
+    </>
   );
 }
