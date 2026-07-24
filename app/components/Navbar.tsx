@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [time, setTime] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   // UTC clock ticker
   useEffect(() => {
@@ -20,6 +22,16 @@ export default function Navbar() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const getHref = (item: string) => {
+    const itemUpper = item.toUpperCase();
+    if (itemUpper === "HOME") return "/";
+    if (itemUpper === "ABOUT") return "/about";
+    if (itemUpper === "CONTACT") return "/contact";
+    if (itemUpper === "BUILDER NIGHTS" || itemUpper === "BUILDER_NIGHTS") return "/builder-nights";
+    const sectionId = item.toLowerCase();
+    return pathname === "/" ? `#${sectionId}` : `/#${sectionId}`;
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-blue-500/20 bg-gradient-to-r from-zinc-950 via-blue-950/20 to-zinc-950 backdrop-blur-md shadow-[0_4px_30px_rgba(59,130,246,0.12)] select-none font-mono">
@@ -37,7 +49,7 @@ export default function Navbar() {
             </div>
 
             {/* CYBR_ Logo Box */}
-            <a href="#" className="block">
+            <Link href="/" className="block">
               <div className="bg-[#c6f806] text-black font-black px-4 py-2 flex items-center tracking-wider text-sm border border-[#c6f806] shadow-[0_0_15px_rgba(198,248,6,0.25)] hover:bg-black hover:text-[#c6f806] hover:border-[#c6f806] transition-all duration-200 group">
                 <svg
                   className="w-4 h-4 fill-current mr-2.5 animate-pulse group-hover:scale-110 transition-transform duration-200"
@@ -60,15 +72,15 @@ export default function Navbar() {
                 </svg>
                 <span className="tracking-widest">CYBR_</span>
               </div>
-            </a>
+            </Link>
           </div>
 
           {/* MIDDLE: Navigation Items */}
           <nav className="hidden md:flex items-center space-x-5">
-            {["WORK", "SERVICES", "ABOUT", "LABS", "COMMUNITY", "CONTACT"].map((item, idx, arr) => (
+            {["HOME", "ABOUT", "BUILDER NIGHTS", "COMMUNITY", "CONTACT"].map((item, idx, arr) => (
               <React.Fragment key={item}>
                 <Link
-                  href={`#${item.toLowerCase()}`}
+                  href={getHref(item)}
                   className="text-zinc-400 hover:text-white font-medium text-xs tracking-widest transition-all duration-200 uppercase relative py-2 group"
                 >
                   {item}
@@ -98,7 +110,7 @@ export default function Navbar() {
             {/* CTA Button */}
             <div className="hidden md:block">
               <Link
-                href="#community"
+                href={getHref("COMMUNITY")}
                 className="bg-[#c6f806] text-black font-black text-xs uppercase px-5 py-2.5 flex items-center space-x-2 tracking-widest border border-[#c6f806] hover:bg-transparent hover:text-[#c6f806] shadow-[0_0_15px_rgba(198,248,6,0.3)] hover:shadow-[0_0_25px_rgba(198,248,6,0.6)] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-300 cursor-pointer"
               >
                 <span>EXPLORE THE COMMUNITY</span>
@@ -134,10 +146,10 @@ export default function Navbar() {
           <div className="px-4 pt-4 pb-6 space-y-4 flex flex-col items-center">
             
             {/* Nav Links */}
-            {["WORK", "SERVICES", "ABOUT", "LABS", "COMMUNITY", "CONTACT"].map((item) => (
+            {["HOME", "ABOUT", "BUILDER NIGHTS", "COMMUNITY", "CONTACT"].map((item) => (
               <Link
                 key={item}
-                href={`#${item.toLowerCase()}`}
+                href={getHref(item)}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="w-full text-center text-zinc-300 hover:text-white py-2 text-sm tracking-widest hover:bg-zinc-900/50 rounded-sm border border-transparent hover:border-blue-500/10 transition-all duration-200"
               >
