@@ -52,13 +52,13 @@ export default function AnimatedButton({ href, variant, children }: AnimatedButt
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={handleMouseLeave}
-        className="relative flex-1 bg-[#39FF14] text-black font-mono text-[11px] font-black uppercase text-center py-2.5 px-4 rounded-sm tracking-widest border border-[#39FF14] shadow-[0_0_12px_rgba(57,255,20,0.25)] hover:shadow-[0_0_20px_rgba(57,255,20,0.65)] hover:bg-black hover:text-[#39FF14] active:scale-95 transition-all duration-300 select-none cursor-pointer flex items-center justify-center gap-1.5 z-30"
+        className="relative flex-1 bg-[#c6f806] text-black font-mono text-[11px] font-black uppercase text-center py-2.5 px-4 rounded-sm tracking-widest border border-[#c6f806] shadow-[0_0_15px_rgba(198,248,6,0.3)] hover:shadow-[0_0_22px_rgba(198,248,6,0.65)] hover:bg-black hover:text-[#c6f806] active:scale-95 transition-all duration-300 select-none cursor-pointer flex items-center justify-center gap-1.5 z-30"
       >
         {/* Futuristic top-left and bottom-right corner bracket accents */}
         {isHovered && (
           <>
-            <div className="absolute top-[-2px] left-[-2px] w-1.5 h-1.5 border-t border-l border-white pointer-events-none" />
-            <div className="absolute bottom-[-2px] right-[-2px] w-1.5 h-1.5 border-b border-r border-white pointer-events-none" />
+            <div className="absolute top-[-2px] left-[-2px] w-1.5 h-1.5 border-t border-l border-black pointer-events-none" />
+            <div className="absolute bottom-[-2px] right-[-2px] w-1.5 h-1.5 border-b border-r border-black pointer-events-none" />
           </>
         )}
         <span>{children}</span>
@@ -78,13 +78,13 @@ export default function AnimatedButton({ href, variant, children }: AnimatedButt
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
-      className="relative flex-1 bg-transparent text-cyan-400 font-mono text-[11px] font-black uppercase text-center py-2.5 px-4 rounded-sm tracking-widest border border-cyan-500/30 hover:border-cyan-400 hover:text-white hover:bg-cyan-500/5 hover:shadow-[0_0_15px_rgba(0,245,255,0.25)] active:scale-95 transition-all duration-300 select-none cursor-pointer flex items-center justify-center gap-1.5 z-30"
+      className="relative flex-1 bg-transparent text-[#c6f806] font-mono text-[11px] font-black uppercase text-center py-2.5 px-4 rounded-sm tracking-widest border border-[rgba(198,248,6,0.35)] hover:border-[#c6f806] hover:text-black hover:bg-[#c6f806] hover:shadow-[0_0_15px_rgba(198,248,6,0.4)] active:scale-95 transition-all duration-300 select-none cursor-pointer flex items-center justify-center gap-1.5 z-30"
     >
       {/* Laser side brackets */}
       {isHovered && (
         <>
-          <div className="absolute top-[-1px] left-[-1px] w-1.5 h-1.5 border-t border-l border-cyan-400 pointer-events-none" />
-          <div className="absolute bottom-[-1px] right-[-1px] w-1.5 h-1.5 border-b border-r border-cyan-400 pointer-events-none" />
+          <div className="absolute top-[-1px] left-[-1px] w-1.5 h-1.5 border-t border-l border-[#c6f806] pointer-events-none" />
+          <div className="absolute bottom-[-1px] right-[-1px] w-1.5 h-1.5 border-b border-r border-[#c6f806] pointer-events-none" />
         </>
       )}
       <span>{children}</span>

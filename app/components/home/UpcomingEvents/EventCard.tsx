@@ -127,7 +127,7 @@ export default function EventCard({ event }: EventCardProps) {
           rotateY,
           transformStyle: "preserve-3d",
         }}
-        className="pulse-border-card relative w-full h-full rounded-lg p-[1.2px] flex flex-col justify-between transition-colors duration-500"
+        className="pulse-border-card relative w-full h-full rounded-lg p-[1.2px] flex flex-col justify-between border border-[rgba(198,248,6,0.3)] group-hover:border-[rgba(198,248,6,0.65)] transition-colors duration-300"
       >
         {/* ─── WebGL Background (Lazy rendered only on hover) ─── */}
         <ThreeBackground isHovered={isHovered} />
@@ -136,46 +136,34 @@ export default function EventCard({ event }: EventCardProps) {
         <CardGlow />
 
         {/* ─── HUD Corner Brackets (Corners shift style on hover) ─── */}
-        <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
-        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
-        <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
-        <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
+        <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
+        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
+        <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
+        <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
 
         {/* ─── Solid Dark Card Content Block (Covers gradient center) ─── */}
-        <div className="relative w-full h-full rounded-lg bg-[#070B14] flex flex-col justify-between overflow-hidden z-10">
-          {/* Top 60% Image Section */}
+        <div 
+          className="relative w-full h-full rounded-lg flex flex-col justify-between overflow-hidden z-10"
+          style={{
+            background: `radial-gradient(ellipse at 50% 0%, rgba(198,248,6,0.07) 0%, rgba(4,6,4,0.98) 75%)`,
+            backgroundColor: "#040604",
+          }}
+        >
+          {/* Top Image Section (Clickable opening in new tab) */}
           <div className="relative transform-gpu transition-transform duration-700 ease-out group-hover:translate-z-6 z-20">
-            <EventImage src={event.image} alt={event.title} isHovered={isHovered} />
+            <a 
+              href={event.applyLink || event.registrationLink || "#"} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block cursor-pointer"
+            >
+              <EventImage src={event.image} alt={event.title} isHovered={isHovered} />
+            </a>
           </div>
 
-          {/* Bottom 40% Content Details */}
-          <div className="relative flex flex-col flex-grow justify-between z-20 bg-gradient-to-t from-zinc-950 to-transparent">
-            <EventInfo
-              title={event.title}
-              organizer={event.organizer}
-              location={event.location}
-              mode={event.mode}
-              prizePool={event.prizePool}
-              registrationDeadline={event.registrationDeadline}
-              startDate={event.startDate}
-              endDate={event.endDate}
-              description={event.description}
-            />
-
-            {/* Footer controls: tags & action buttons */}
-            <div className="px-5 pb-5 pt-0 flex flex-col gap-4">
-              <EventTags tags={event.themeTags} />
-
-              {/* Buttons row */}
-              <div className="flex gap-3 relative z-30">
-                <AnimatedButton href={event.detailsLink} variant="secondary">
-                  DETAILS
-                </AnimatedButton>
-                <AnimatedButton href={event.registrationLink} variant="primary">
-                  REGISTER
-                </AnimatedButton>
-              </div>
-            </div>
+          {/* Bottom Content Details */}
+          <div className="relative flex flex-col flex-grow justify-between z-20 bg-gradient-to-t from-[#040604] via-[#040604]/90 to-transparent">
+            <EventInfo event={event} />
           </div>
 
           {/* HUD Identifier details */}
