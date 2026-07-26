@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+const LIME = "#c6f806";
 const WHATSAPP_LINK = "https://chat.whatsapp.com/JIsHbVzNkjlAO46KetTJxy";
 
 const SESSIONS = [
@@ -50,7 +53,39 @@ const SESSIONS = [
 ];
 
 export default function BuilderNightsSection() {
-  const [selectedSession, setSelectedSession] = useState<typeof SESSIONS[0] | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      const chars = headingRef.current?.querySelectorAll(".char");
+      if (chars && chars.length > 0) {
+        gsap.fromTo(
+          chars,
+          { opacity: 0, y: 15, skewX: 10 },
+          {
+            opacity: 1,
+            y: 0,
+            skewX: 0,
+            stagger: 0.04,
+            duration: 0.6,
+            ease: "back.out(1.7)",
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 85%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  const headingText = "BUILDER NIGHTS";
 
   return (
     <section className="relative w-full min-h-screen bg-[#04070C] text-white py-20 px-4 sm:px-6 lg:px-8 font-mono select-none overflow-hidden">
@@ -62,26 +97,62 @@ export default function BuilderNightsSection() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         
-        {/* HEADER */}
-        <div className="flex flex-col items-start mb-12">
-          <div className="flex items-center space-x-3 text-xs tracking-widest text-[#c6f806] mb-3">
-            <span className="inline-block w-2 h-2 bg-[#c6f806] animate-ping rounded-full" />
-            <span>// KUTUMBX_COMMUNITY // WEEKLY_DEVELOPER_SESSIONS</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase flex flex-wrap items-center gap-3">
-            <span>BUILDER</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c6f806] via-cyan-400 to-blue-500">
-              NIGHTS
-            </span>
-            <span className="text-xs px-3 py-1 border border-[#c6f806]/40 bg-[#c6f806]/10 text-[#c6f806] font-normal tracking-widest self-center">
-              2 SESSIONS SHIPPED
-            </span>
+        {/* ─── Premium Heading Row (UPCOMING EVENTS Typography Style) ─── */}
+        <div
+          className="flex items-center gap-4 pb-6 mb-8"
+          style={{
+            borderBottom: `1px solid rgba(198, 248, 6, 0.22)`,
+            boxShadow: `0 1px 12px rgba(198, 248, 6, 0.08)`,
+          }}
+        >
+          <span 
+            className="text-base md:text-xl font-black tracking-widest"
+            style={{
+              color: LIME,
+              textShadow: `0 0 12px rgba(198, 248, 6, 0.65)`,
+            }}
+          >
+            /03
+          </span>
+          
+          <h1
+            ref={headingRef}
+            className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider flex flex-wrap"
+            style={{
+              color: "#000000",
+              WebkitTextStroke: `1.8px ${LIME}`,
+              textShadow: `0 0 18px rgba(198,248,6,0.25), 0 0 35px rgba(198,248,6,0.1)`,
+            }}
+          >
+            {headingText.split("").map((char, index) => (
+              <span
+                key={index}
+                className="char inline-block select-none whitespace-pre"
+              >
+                {char}
+              </span>
+            ))}
           </h1>
 
-          <p className="mt-4 text-zinc-400 max-w-3xl text-sm sm:text-base leading-relaxed font-sans">
-            A weekly developer session for builders, dreamers & problem solvers. No slides. No pressure. Just real builders getting together to code, collaborate, and ship projects live.
-          </p>
+          <div className="ml-auto hidden sm:flex items-center gap-4 text-zinc-400 text-[10px] tracking-widest font-semibold">
+            <span>SYS_VIEW: ENAB</span>
+            <span style={{ color: LIME, textShadow: `0 0 8px ${LIME}` }} className="font-black">+</span>
+          </div>
+        </div>
+
+        {/* SECTION SUBHEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
+          <div>
+            <div className="text-xs text-[#c6f806] tracking-widest uppercase mb-1">
+              // KUTUMBX_COMMUNITY // WEEKLY_DEVELOPER_SESSIONS
+            </div>
+            <p className="text-zinc-400 text-sm sm:text-base font-sans max-w-3xl leading-relaxed">
+              A weekly developer session for builders, dreamers & problem solvers. No slides. No pressure. Just real builders getting together to code, collaborate, and ship projects live.
+            </p>
+          </div>
+          <div className="text-xs font-mono text-zinc-400 bg-zinc-950/80 border border-zinc-800 px-4 py-2 shrink-0 self-start sm:self-center">
+            SESSIONS_SHIPPED: <span className="text-[#c6f806] font-bold">2 COMPLETED</span>
+          </div>
         </div>
 
         {/* WHATSAPP COMMUNITY HERO BANNER */}

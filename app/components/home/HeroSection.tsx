@@ -606,8 +606,10 @@ export default function HeroSection() {
           {/* Buttons */}
           <div className="flex items-center gap-3 flex-wrap">
             <motion.a
-              href="#community"
-              id="hero-join-community"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSd5BiGBDdvSu93bkO-5xXBFz6ExpYrDwFExq__f0aahnGr2BA/viewform?usp=header"
+              target="_blank"
+              rel="noopener noreferrer"
+              id="hero-join-builder-night"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               className="inline-flex items-center gap-2 uppercase tracking-widest font-black text-black cursor-pointer"
@@ -619,7 +621,7 @@ export default function HeroSection() {
                 fontSize: "clamp(9px, 0.85vw, 11px)",
               }}
             >
-              JOIN COMMUNITY
+              JOIN BUILDER NIGHT
               <span style={{ fontSize: 13 }}>→</span>
             </motion.a>
 
