@@ -7,6 +7,44 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import JoinModal from "./JoinModal";
 import CommunityParticles from "./CommunityParticles";
 
+const LIME = "#c6f806";
+
+// Crosshair + marks for Community Hub background
+const COMMUNITY_PLUS_MARKS = [
+  { x: "6%", y: "18%" }, { x: "14%", y: "82%" },
+  { x: "28%", y: "30%" }, { x: "40%", y: "78%" },
+  { x: "52%", y: "22%" }, { x: "62%", y: "70%" },
+  { x: "76%", y: "25%" }, { x: "88%", y: "84%" },
+  { x: "95%", y: "15%" }, { x: "20%", y: "60%" },
+  { x: "68%", y: "88%" }, { x: "84%", y: "45%" },
+];
+
+// Ambient 4-point star sparkles for Community Hub
+const COMMUNITY_SPARKLES = [
+  { x: "10%", y: "25%", size: 14, opacity: 0.8, delay: "0s", duration: "3.2s" },
+  { x: "24%", y: "72%", size: 12, opacity: 0.7, delay: "1.2s", duration: "2.8s" },
+  { x: "40%", y: "18%", size: 16, opacity: 0.85, delay: "0.5s", duration: "4.0s" },
+  { x: "58%", y: "82%", size: 10, opacity: 0.65, delay: "2.1s", duration: "3.5s" },
+  { x: "72%", y: "35%", size: 18, opacity: 0.9, delay: "1.8s", duration: "3.1s" },
+  { x: "88%", y: "65%", size: 14, opacity: 0.75, delay: "0.8s", duration: "3.8s" },
+  { x: "94%", y: "20%", size: 12, opacity: 0.7, delay: "1.5s", duration: "3.4s" },
+  { x: "46%", y: "52%", size: 15, opacity: 0.8, delay: "0.3s", duration: "4.2s" },
+];
+
+// Glowing dot particles clustered for Community Hub background
+const COMMUNITY_DOT_PARTICLES = [
+  { x: "18%", y: "35%", size: 3, opacity: 0.85, delay: "0s", duration: "3.1s" },
+  { x: "30%", y: "60%", size: 2, opacity: 0.7, delay: "0.8s", duration: "2.5s" },
+  { x: "44%", y: "25%", size: 4, opacity: 0.9, delay: "1.4s", duration: "3.8s" },
+  { x: "52%", y: "72%", size: 3, opacity: 0.75, delay: "0.3s", duration: "2.9s" },
+  { x: "68%", y: "45%", size: 5, opacity: 0.95, delay: "1.9s", duration: "4.2s" },
+  { x: "80%", y: "80%", size: 3, opacity: 0.8, delay: "0.6s", duration: "3.0s" },
+  { x: "88%", y: "32%", size: 2, opacity: 0.7, delay: "2.1s", duration: "3.3s" },
+  { x: "94%", y: "56%", size: 4, opacity: 0.85, delay: "1.0s", duration: "2.7s" },
+  { x: "38%", y: "85%", size: 3, opacity: 0.75, delay: "1.7s", duration: "3.6s" },
+  { x: "62%", y: "18%", size: 2, opacity: 0.65, delay: "0.4s", duration: "2.8s" },
+];
+
 // Custom Magnetic Join Button Component
 function MagneticJoinButton({ onClick }: { onClick: () => void }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -152,49 +190,174 @@ export default function CommunitySection() {
     <section
       ref={sectionRef}
       id="community"
-      className="relative w-full py-24 px-6 md:px-12 lg:px-16 overflow-hidden bg-[#04070C] select-none font-mono"
+      className="relative w-full py-24 px-6 md:px-12 lg:px-16 overflow-hidden bg-[#000000] select-none font-mono"
     >
-      {/* Background Cyber Grid */}
-      <div 
-        className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none"
+      {/* ─── Keyframe Animations ─── */}
+      <style>{`
+        @keyframes scanLine {
+          0%   { top: -2px; opacity: 0.8; }
+          90%  { top: 100%; opacity: 0.8; }
+          100% { top: 100%; opacity: 0; }
+        }
+        @keyframes glowBreath {
+          0%, 100% { opacity: 0.75; transform: scale(1); }
+          50%      { opacity: 1;    transform: scale(1.04); }
+        }
+        @keyframes sparkleTwinkle {
+          0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.35; }
+          50%      { transform: scale(1.3) rotate(12deg); opacity: 1; filter: drop-shadow(0 0 12px rgba(198,248,6,0.95)); }
+        }
+        @keyframes dotFloat {
+          0%, 100% { transform: translateY(0px) scale(0.85); opacity: 0.45; }
+          50%      { transform: translateY(-6px) scale(1.25); opacity: 1; filter: drop-shadow(0 0 8px rgba(198,248,6,0.95)); }
+        }
+      `}</style>
+
+      {/* ─── Fine lime dot grid texture ─── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(0, 245, 255, 0.2) 1px, transparent 1px), 
-            linear-gradient(90deg, rgba(0, 245, 255, 0.2) 1px, transparent 1px)
-          `,
-          backgroundSize: "44px 44px",
-          backgroundPosition: "center",
-          animation: "gridScroll 45s linear infinite",
+          backgroundImage: `radial-gradient(circle, rgba(198,248,6,0.11) 1px, transparent 1px)`,
+          backgroundSize: "18px 18px",
+          opacity: 0.55,
         }}
       />
 
-      {/* Cyber Scanlines */}
-      <div 
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]"
+      {/* ─── Large lime glow bloom — right anchor ─── */}
+      <div
+        className="absolute pointer-events-none"
         style={{
-          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #00F5FF 3px, #00F5FF 6px)",
+          right: "8%", top: "15%",
+          width: "48%", height: "55%",
+          background: `radial-gradient(ellipse at center,
+            rgba(198,248,6,0.25) 0%,
+            rgba(198,248,6,0.10) 30%,
+            transparent 70%)`,
+          filter: "blur(65px)",
+          animation: "glowBreath 6s ease-in-out infinite",
         }}
       />
 
-      {/* Glowing Bloom Aura spots */}
-      <div className="absolute top-[30%] right-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-cyan-600/10 to-[#00F5FF]/5 blur-[120px] pointer-events-none animate-pulse duration-[9000ms]" />
-      <div className="absolute bottom-[20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-[#c6f806]/5 to-transparent blur-[120px] pointer-events-none animate-pulse duration-[11000ms]" />
+      {/* ─── Large lime glow bloom — left anchor ─── */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: "5%", bottom: "10%",
+          width: "48%", height: "55%",
+          background: `radial-gradient(ellipse at center,
+            rgba(198,248,6,0.20) 0%,
+            rgba(198,248,6,0.08) 35%,
+            transparent 70%)`,
+          filter: "blur(70px)",
+          animation: "glowBreath 8s ease-in-out infinite 2s",
+        }}
+      />
+
+      {/* ─── Noise film grain ─── */}
+      <div
+        className="absolute inset-0 opacity-[0.045] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* ─── Scattered + crosshair marks ─── */}
+      {COMMUNITY_PLUS_MARKS.map((p, i) => (
+        <svg
+          key={`plus-${i}`}
+          className="absolute pointer-events-none z-[1]"
+          style={{
+            left: p.x, top: p.y,
+            width: 10, height: 10,
+            opacity: 0.25 + (i % 3) * 0.08,
+          }}
+          viewBox="0 0 10 10"
+        >
+          <line x1="5" y1="0" x2="5" y2="10" stroke={LIME} strokeWidth="0.8" />
+          <line x1="0" y1="5" x2="10" y2="5" stroke={LIME} strokeWidth="0.8" />
+          <circle cx="5" cy="5" r="1" fill={LIME} />
+        </svg>
+      ))}
+
+      {/* ─── Scattered 4-pointed star sparkles ─── */}
+      {COMMUNITY_SPARKLES.map((s, i) => (
+        <svg
+          key={`sparkle-${i}`}
+          className="absolute pointer-events-none z-[2]"
+          style={{
+            left: s.x,
+            top: s.y,
+            width: s.size,
+            height: s.size,
+            opacity: s.opacity,
+            animation: `sparkleTwinkle ${s.duration} ease-in-out infinite ${s.delay}`,
+          }}
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M10 0 Q10 10 20 10 Q10 10 10 20 Q10 10 0 10 Q10 10 10 0 Z"
+            fill={LIME}
+          />
+        </svg>
+      ))}
+
+      {/* ─── Glowing dot particles ─── */}
+      {COMMUNITY_DOT_PARTICLES.map((d, i) => (
+        <div
+          key={`dot-${i}`}
+          className="absolute rounded-full pointer-events-none z-[2]"
+          style={{
+            left: d.x,
+            top: d.y,
+            width: d.size,
+            height: d.size,
+            backgroundColor: LIME,
+            boxShadow: `0 0 ${d.size * 2}px ${LIME}, 0 0 ${d.size * 4}px rgba(198,248,6,0.8)`,
+            opacity: d.opacity,
+            animation: `dotFloat ${d.duration} ease-in-out infinite ${d.delay}`,
+          }}
+        />
+      ))}
+
+      {/* ─── Horizontal scan line animation ─── */}
+      <div
+        className="absolute left-0 w-full h-[1px] z-[2] pointer-events-none"
+        style={{
+          background: `linear-gradient(to right, transparent, ${LIME}55, ${LIME}88, ${LIME}55, transparent)`,
+          boxShadow: `0 0 6px ${LIME}55`,
+          animation: "scanLine 11s linear infinite",
+        }}
+      />
 
       {/* Main Section Content Wrapper */}
       <div className="relative z-10 max-w-[1600px] mx-auto flex flex-col gap-12">
         
-        {/* Section Heading Row */}
-        <div className="flex items-center gap-4 border-b border-blue-500/10 pb-6">
+        {/* ─── Premium Heading Row (KUTUMBX Typography Style) ─── */}
+        <div
+          className="flex items-center gap-4 pb-6"
+          style={{
+            borderBottom: `1px solid rgba(198, 248, 6, 0.22)`,
+            boxShadow: `0 1px 12px rgba(198, 248, 6, 0.08)`,
+          }}
+        >
           <span 
-            className="text-base md:text-lg font-black text-[#39FF14] tracking-widest"
-            style={{ textShadow: "0 0 10px rgba(57, 255, 20, 0.5)" }}
+            className="text-base md:text-xl font-black tracking-widest"
+            style={{
+              color: LIME,
+              textShadow: `0 0 12px rgba(198, 248, 6, 0.65)`,
+            }}
           >
-            /04
+            /03
           </span>
           
           <h2
             ref={headingRef}
-            className="text-2xl md:text-3xl font-black uppercase text-white tracking-widest flex flex-wrap"
+            className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider flex flex-wrap"
+            style={{
+              color: "#000000",
+              WebkitTextStroke: `1.8px ${LIME}`,
+              textShadow: `0 0 18px rgba(198,248,6,0.25), 0 0 35px rgba(198,248,6,0.1)`,
+            }}
           >
             {headingText.split("").map((char, index) => (
               <span
@@ -206,9 +369,9 @@ export default function CommunitySection() {
             ))}
           </h2>
 
-          <div className="ml-auto hidden sm:flex items-center gap-4 text-zinc-500 text-[10px] tracking-widest font-semibold">
+          <div className="ml-auto hidden sm:flex items-center gap-4 text-zinc-400 text-[10px] tracking-widest font-semibold">
             <span>SYS_GATE: EXT_COMMS</span>
-            <span className="text-[#39FF14] font-black">+</span>
+            <span style={{ color: LIME, textShadow: `0 0 8px ${LIME}` }} className="font-black">+</span>
           </div>
         </div>
 
@@ -228,18 +391,24 @@ export default function CommunitySection() {
               rotateY,
               transformStyle: "preserve-3d",
             }}
-            className="pulse-border-card relative w-full h-full rounded-lg p-[1.5px] flex flex-col justify-between"
+            className="relative w-full h-full rounded-lg p-[1.5px] flex flex-col justify-between border border-[rgba(198,248,6,0.3)] hover:border-[rgba(198,248,6,0.65)] transition-colors duration-300"
           >
             {/* Card Main Cover Back */}
-            <div className="relative w-full h-full rounded-lg bg-[#070B14] p-8 sm:p-12 overflow-hidden flex flex-col md:flex-row gap-8 items-center justify-between z-10">
+            <div 
+              className="relative w-full h-full rounded-lg p-8 sm:p-12 overflow-hidden flex flex-col md:flex-row gap-8 items-center justify-between z-10"
+              style={{
+                background: `radial-gradient(ellipse at 50% 0%, rgba(198,248,6,0.08) 0%, rgba(4,6,4,0.98) 75%)`,
+                backgroundColor: "#040604",
+              }}
+            >
               {/* Interactive cursor tracking particle swarm */}
               <CommunityParticles />
               
               {/* Corner Accent HUD brackets inside card */}
-              <div className="absolute top-0 left-0 w-3.5 h-3.5 border-t-2 border-l-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
-              <div className="absolute top-0 right-0 w-3.5 h-3.5 border-t-2 border-r-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
-              <div className="absolute bottom-0 left-0 w-3.5 h-3.5 border-b-2 border-l-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
-              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 border-b-2 border-r-2 border-white/10 pointer-events-none z-20 group-hover:border-white/30 transition-colors duration-300" />
+              <div className="absolute top-0 left-0 w-3.5 h-3.5 border-t-2 border-l-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
+              <div className="absolute top-0 right-0 w-3.5 h-3.5 border-t-2 border-r-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
+              <div className="absolute bottom-0 left-0 w-3.5 h-3.5 border-b-2 border-l-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
+              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 border-b-2 border-r-2 border-[rgba(198,248,6,0.35)] pointer-events-none z-20 group-hover:border-[#c6f806] transition-colors duration-300" />
 
               {/* LEFT: Text & Diagnostics */}
               <div className="flex flex-col gap-6 w-full md:w-3/5 text-left relative z-20">

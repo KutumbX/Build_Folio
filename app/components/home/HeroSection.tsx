@@ -27,6 +27,54 @@ const PLUS_MARKS = [
   { x: "90%", y: "48%" }, { x: "48%", y: "85%" },
 ];
 
+// Ambient 4-point star sparkles matching bg.png
+const SPARKLES = [
+  { x: "16%", y: "45%", size: 14, opacity: 0.85, delay: "0s", duration: "3.2s" },
+  { x: "29%", y: "30%", size: 10, opacity: 0.65, delay: "1.2s", duration: "2.8s" },
+  { x: "44%", y: "49%", size: 18, opacity: 0.95, delay: "0.5s", duration: "4.0s" },
+  { x: "51%", y: "36%", size: 12, opacity: 0.7, delay: "2.1s", duration: "3.5s" },
+  { x: "63%", y: "60%", size: 16, opacity: 0.9, delay: "1.8s", duration: "3.1s" },
+  { x: "74%", y: "42%", size: 10, opacity: 0.6, delay: "0.8s", duration: "2.9s" },
+  { x: "83%", y: "32%", size: 15, opacity: 0.8, delay: "2.5s", duration: "3.8s" },
+  { x: "26%", y: "66%", size: 12, opacity: 0.75, delay: "1.5s", duration: "3.4s" },
+  { x: "58%", y: "24%", size: 20, opacity: 0.85, delay: "0.3s", duration: "4.2s" },
+  { x: "69%", y: "76%", size: 14, opacity: 0.7, delay: "2.0s", duration: "3.6s" },
+  { x: "37%", y: "78%", size: 10, opacity: 0.6, delay: "1.1s", duration: "2.7s" },
+  { x: "87%", y: "58%", size: 16, opacity: 0.8, delay: "0.7s", duration: "3.3s" },
+  { x: "10%", y: "28%", size: 12, opacity: 0.7, delay: "1.9s", duration: "3.0s" },
+  { x: "92%", y: "22%", size: 14, opacity: 0.75, delay: "0.4s", duration: "3.7s" },
+  { x: "18%", y: "78%", size: 11, opacity: 0.7, delay: "1.6s", duration: "3.3s" },
+  { x: "49%", y: "18%", size: 16, opacity: 0.85, delay: "0.9s", duration: "3.9s" },
+  { x: "79%", y: "68%", size: 13, opacity: 0.75, delay: "2.2s", duration: "3.1s" },
+  { x: "33%", y: "55%", size: 15, opacity: 0.8, delay: "1.4s", duration: "3.6s" },
+  { x: "67%", y: "31%", size: 12, opacity: 0.7, delay: "0.6s", duration: "2.9s" },
+  { x: "88%", y: "44%", size: 17, opacity: 0.9, delay: "1.1s", duration: "4.1s" },
+];
+
+// Glowing dot particles clustered around central radiance core matching bg.png
+const DOT_PARTICLES = [
+  { x: "32%", y: "45%", size: 3, opacity: 0.9, delay: "0s", duration: "3.1s" },
+  { x: "38%", y: "52%", size: 2, opacity: 0.7, delay: "0.8s", duration: "2.5s" },
+  { x: "42%", y: "38%", size: 4, opacity: 0.95, delay: "1.4s", duration: "3.8s" },
+  { x: "45%", y: "62%", size: 2, opacity: 0.6, delay: "0.3s", duration: "2.9s" },
+  { x: "48%", y: "44%", size: 5, opacity: 1.0, delay: "1.9s", duration: "4.2s" },
+  { x: "52%", y: "58%", size: 3, opacity: 0.85, delay: "0.6s", duration: "3.0s" },
+  { x: "55%", y: "34%", size: 2, opacity: 0.75, delay: "2.1s", duration: "3.3s" },
+  { x: "58%", y: "49%", size: 4, opacity: 0.9, delay: "1.0s", duration: "2.7s" },
+  { x: "62%", y: "41%", size: 3, opacity: 0.8, delay: "1.7s", duration: "3.6s" },
+  { x: "65%", y: "55%", size: 2, opacity: 0.65, delay: "0.4s", duration: "2.8s" },
+  { x: "30%", y: "60%", size: 3, opacity: 0.7, delay: "1.2s", duration: "3.4s" },
+  { x: "35%", y: "33%", size: 2, opacity: 0.8, delay: "2.3s", duration: "2.6s" },
+  { x: "40%", y: "70%", size: 4, opacity: 0.85, delay: "0.7s", duration: "3.9s" },
+  { x: "50%", y: "28%", size: 3, opacity: 0.75, delay: "1.5s", duration: "3.2s" },
+  { x: "60%", y: "68%", size: 3, opacity: 0.8, delay: "0.2s", duration: "3.5s" },
+  { x: "68%", y: "48%", size: 4, opacity: 0.9, delay: "1.8s", duration: "3.0s" },
+  { x: "72%", y: "36%", size: 2, opacity: 0.6, delay: "2.5s", duration: "2.4s" },
+  { x: "25%", y: "48%", size: 3, opacity: 0.7, delay: "0.9s", duration: "3.7s" },
+  { x: "78%", y: "52%", size: 3, opacity: 0.75, delay: "1.6s", duration: "3.1s" },
+  { x: "47%", y: "75%", size: 2, opacity: 0.65, delay: "2.0s", duration: "2.9s" },
+];
+
 // Waveform bar heights for AI_UPLINK
 const WAVE_BARS = [0.5, 0.8, 1, 0.6, 0.9, 0.4, 0.7, 1, 0.5, 0.85, 0.6, 0.9, 0.45, 0.7, 0.8, 1, 0.5, 0.65, 0.9, 0.4];
 
@@ -218,6 +266,14 @@ export default function HeroSection() {
           0%, 100% { transform: scaleY(0.3); }
           50%      { transform: scaleY(1); }
         }
+        @keyframes sparkleTwinkle {
+          0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.35; }
+          50%      { transform: scale(1.3) rotate(12deg); opacity: 1; filter: drop-shadow(0 0 12px rgba(198,248,6,0.95)); }
+        }
+        @keyframes dotFloat {
+          0%, 100% { transform: translateY(0px) scale(0.85); opacity: 0.45; }
+          50%      { transform: translateY(-6px) scale(1.25); opacity: 1; filter: drop-shadow(0 0 8px rgba(198,248,6,0.95)); }
+        }
       `}</style>
 
       <section
@@ -297,6 +353,46 @@ export default function HeroSection() {
             <line x1="5" y1="0" x2="5" y2="10" stroke={LIME} strokeWidth="0.8" />
             <line x1="0" y1="5" x2="10" y2="5" stroke={LIME} strokeWidth="0.8" />
           </svg>
+        ))}
+
+        {/* Scattered 4-pointed star sparkles matching bg.png */}
+        {SPARKLES.map((s, i) => (
+          <svg
+            key={`sparkle-${i}`}
+            className="absolute pointer-events-none z-[3]"
+            style={{
+              left: s.x,
+              top: s.y,
+              width: s.size,
+              height: s.size,
+              opacity: s.opacity,
+              animation: `sparkleTwinkle ${s.duration} ease-in-out infinite ${s.delay}`,
+            }}
+            viewBox="0 0 20 20"
+          >
+            <path
+              d="M10 0 Q10 10 20 10 Q10 10 10 20 Q10 10 0 10 Q10 10 10 0 Z"
+              fill={LIME}
+            />
+          </svg>
+        ))}
+
+        {/* Glowing dot particles clustered around central core matching bg.png */}
+        {DOT_PARTICLES.map((d, i) => (
+          <div
+            key={`dot-${i}`}
+            className="absolute rounded-full pointer-events-none z-[3]"
+            style={{
+              left: d.x,
+              top: d.y,
+              width: d.size,
+              height: d.size,
+              backgroundColor: LIME,
+              boxShadow: `0 0 ${d.size * 2}px ${LIME}, 0 0 ${d.size * 4}px rgba(198,248,6,0.8)`,
+              opacity: d.opacity,
+              animation: `dotFloat ${d.duration} ease-in-out infinite ${d.delay}`,
+            }}
+          />
         ))}
 
         {/* Horizontal scan line animation */}

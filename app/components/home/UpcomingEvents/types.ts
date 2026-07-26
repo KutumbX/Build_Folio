@@ -1,16 +1,26 @@
 export interface Event {
   id: string;
   title: string;
-  organizer: string;
+  type?: string;
+  theme?: string[];
+  participants?: number;
+  status?: string;
+  registration?: string;
+  startDate?: string;
+  applyLink?: string;
+  discordLink?: string;
+  websiteLink?: string;
   image: string;
-  location: string;
-  mode: "Online" | "Offline" | "Hybrid";
-  prizePool: string;
-  registrationDeadline: string; // ISO format string (e.g. '2026-07-15')
-  startDate: string;
-  endDate: string;
-  description: string;
-  themeTags: string[];
-  registrationLink: string;
-  detailsLink: string;
+  avatars?: string[];
+  // Backwards compatibility fields
+  organizer?: string;
+  location?: string;
+  mode?: "Online" | "Offline" | "Hybrid";
+  prizePool?: string;
+  registrationDeadline?: string;
+  endDate?: string;
+  description?: string;
+  themeTags?: string[];
+  registrationLink?: string;
+  detailsLink?: string;
 }
