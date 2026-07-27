@@ -1,28 +1,29 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+// import process from "process";
 
 // ─────────────────────────────────────────────────────────────
 // DATA SCHEMAS
 // ─────────────────────────────────────────────────────────────
 
 const METRICS = [
-  { label: "ACTIVE_NODES", value: "15.4K+", sub: "Global Dev Network" },
-  { label: "PROJECTS_BUILT", value: "1,250+", sub: "Cyber Portfolios" },
-  { label: "LABS_DEPARTMENTS", value: "48", sub: "Open Source Incubators" },
-  { label: "SYSTEM_UPTIME", value: "99.99%", sub: "Latency < 12ms" },
+  { label: "ACTIVE_NODES", value: "60+", sub: "Developers Growing Together" },
+  { label: "PROJECTS_BUILT", value: "5+", sub: "Cyber Portfolios" },
+  { label: "Events", value: "10+", sub: "Workshops & Coding Sessions" },
+  { label: "Coontributors", value: "5+", sub: "Global Dev Network" },
 ];
 
 const PILLARS = [
   {
     id: "01",
-    title: "GPU-ACCELERATED ARCHITECTURE",
-    category: "PERFORMANCE",
+    title: "CAREER & LEADERSHIP",
+    category: "NEXT GENERATION",
     description:
-      "Micro-optimized WebGL 3D graphics powered by Three.js & React 19. Designed for ultra-high FPS, dynamic shaders, and interactive spatial interfaces.",
-    tech: ["Three.js", "React 19", "Next.js 16", "GLSL Shaders"],
+      "Develop technical expertise, communication, and leadership skills while preparing for internships, research, startups, and global opportunities.",
+    tech: ["Leadership", "Career Development", "Research", "Portfolio"],
     icon: (
       <svg className="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -31,10 +32,10 @@ const PILLARS = [
   },
   {
     id: "02",
-    title: "OPEN CYBER LABS & INCUBATOR",
-    category: "ECOSYSTEM",
+    title: "COMMUNITY COLLABORATION",
+    category: "Open source",
     description:
-      "A collaborative sandbox for experimental web technologies, shader prototypes, hackathons, and open-source portfolio blueprints.",
+      "Learn by contributing to open-source projects, participating in hackathons, and collaborating with developers worldwide.",
     tech: ["Open Source", "Hackathons", "Code Jams", "Design Systems"],
     icon: (
       <svg className="w-6 h-6 text-[#c6f806]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -44,10 +45,10 @@ const PILLARS = [
   },
   {
     id: "03",
-    title: "GLOBAL DEVELOPER MATRIX",
+    title: "COLLABORATE & GROW",
     category: "COMMUNITY",
     description:
-      "Peer-to-peer code reviews, real-time feedback loops, direct mentorship, and live showcase sessions with top industry creators.",
+      "Connect with passionate developers through hackathons, open-source projects, mentorship, peer learning, and technical communities that encourage continuous growth.",
     tech: ["Discord", "Live Review", "Peer Network", "Mentorship"],
     icon: (
       <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,11 +58,11 @@ const PILLARS = [
   },
   {
     id: "04",
-    title: "PORTFOLIO GENERATION ENGINE",
-    category: "ENGINE",
+    title: "IOT & ROBOTICS ECOSYSTEM",
+    category: "MAKER LABS",
     description:
-      "Production-ready modular building blocks designed to make developers stand out to recruiters, tech leads, and venture founders.",
-    tech: ["Modular Components", "Framer Motion", "Lenis", "Tailwind v4"],
+      "Design intelligent systems with embedded hardware, automation, robotics, computer vision, and AI-driven innovation.",
+    tech: ["IoT", "ESP32", "Arduino", "Computer Vision"],
     icon: (
       <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -85,77 +86,84 @@ const TIMELINE = [
   {
     phase: "PHASE_01",
     date: "Q1 2024",
-    title: "INIT_KERNEL // ARCHITECTURE LAUNCH",
-    details: "Core framework creation, cyberpunk design language definition, and initial 3D canvas proof of concept.",
+    title: "KUTUMBX // COMMUNITY LAUNCH",
+    details: "Established KutumbX with the vision of creating a collaborative ecosystem for developers, innovators, and technology enthusiasts. Started organizing technical sessions and building an active learning community.",
     status: "COMPLETED",
   },
   {
     phase: "PHASE_02",
     date: "Q3 2024",
-    title: "CYBER_LABS // ECOSYSTEM EXPANSION",
-    details: "Released 15+ open-source 3D components, integrated Lenis smooth scroll, and established community Discord.",
-    status: "COMPLETED",
+    title: "Workshop // Skill Development",
+    details: "Conducted hands-on workshops covering Web Development, Git & GitHub, JavaScript, React, IoT fundamentals, Robotics, RAG Systems, and Open Source, helping members gain practical industry skills.",
+    status: "IN_PROGRESS",
   },
   {
     phase: "PHASE_03",
     date: "Q1 2025",
-    title: "MATRIX_V2 // GLOBAL HACKATHONS",
-    details: "Launched monthly virtual hackathons, developer showcases, and automated portfolio builder CLI.",
+    title: "PROJECTS // OPEN SOURCE INITIATIVES",
+    details: "Launched collaborative development projects, encouraged open-source contributions, organized hackathons, and promoted teamwork through real-world engineering challenges.",
     status: "IN_PROGRESS",
   },
   {
     phase: "PHASE_04",
     date: "Q4 2025",
-    title: "DECENTRALIZED_HUB // AI ASSISTANT",
-    details: "Integrating AI-assisted layout generators, 3D asset repository, and interactive portfolio analytics.",
+    title: "IOT & ROBOTICS // MAKER ECOSYSTEM",
+    details: "Expand hands-on learning through IoT prototypes, robotics workshops, embedded systems, Arduino, Raspberry Pi, ESP32 projects, and AI-powered automation experiments.",
+    status: "UPCOMING",
+  },
+  {
+    phase: "PHASE_05",
+    date: "Q4 2025",
+    title: "CAREER & INDUSTRY // GLOBAL NETWORK",
+    details: "Build mentorship programs, industry collaborations, internship opportunities, research initiatives, startup incubation, and a nationwide network connecting developers and innovators.",
     status: "UPCOMING",
   },
 ];
 
 const TEAM = [
   {
-    name: "Alex Vance",
-    role: "LEAD ARCHITECT",
-    handle: "@vance_cybr",
+    name: "Dev Sahu",
+    role: "Founder",
+    handle: "@devv.not.found",
     skills: ["Three.js", "WebGL", "Next.js"],
     bio: "Pioneering spatial web experiences and high-performance WebGL rendering pipelines.",
-    status: "ONLINE",
+    status: "Active",
     color: "cyan",
   },
   {
-    name: "Elena Rostova",
-    role: "CREATIVE DIRECTOR",
-    handle: "@elena_design",
+    name: "Nandani Sahu",
+    role: "Co-Founder",
+    handle: "@nandinisahu446",
     skills: ["UI/UX", "GSAP", "Cyber Aesthetics"],
     bio: "Crafting visual identities, dark glassmorphism interfaces, and motion design systems.",
     status: "ACTIVE",
     color: "lime",
   },
   {
-    name: "Kutumb Sharma",
-    role: "FOUNDER & CORE STRATEGIST",
-    handle: "@kutumb_dev",
-    skills: ["Fullstack", "React 19", "Architecture"],
+    name: "Mohit Kumar",
+    role: "Operational Manager",
+    handle: "@web.relax.in",
+    skills: ["Fullstack", "React 19", "System Design"],
     bio: "Building open tools for developers to showcase their creative engineering talents.",
-    status: "ONLINE",
+    status: "Active",
     color: "purple",
   },
   {
-    name: "Marcus Chen",
-    role: "PROTOCOL LEAD",
-    handle: "@marcus_cyber",
+    name: "Krish Pipariya",
+    role: "Ecosystem Architect",
+    handle: "@krish_pipariya9793",
     skills: ["Community", "DevRel", "Rust/Node"],
     bio: "Managing developer relations, open-source contributors, and global hackathon events.",
-    status: "IDLE",
+    status: "Active",
     color: "emerald",
   },
 ];
 
 const FAQS = [
   {
-    question: "WHAT IS BUILD_FOLIO & HOW DOES IT WORK?",
+    question: "WHAT IS KutumbX & HOW DOES IT WORK?",
     answer:
-      "Build_Folio (CYBR_) is a high-performance developer portfolio ecosystem. It combines Next.js 16, React 19, Three.js, and GSAP to help developers create ultra-futuristic, 3D-interactive, and recruiter-ready portfolios with minimal overhead.",
+      "KutumbX is a developer community where members learn, build projects, explore IoT & robotics, collaborate on open source, attend workshops and hackathons, and grow together through hands-on learning and mentorship.",
   },
   {
     question: "IS BUILD_FOLIO FREE AND OPEN SOURCE?",
@@ -219,19 +227,18 @@ export default function AboutSection() {
             <span>// SYS_MANIFESTO & ECOSYSTEM ARCHITECTURE</span>
           </div>
 
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white uppercase flex flex-wrap items-center gap-3">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white flex flex-wrap items-center gap-3">
             <span>ABOUT</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c6f806] via-cyan-400 to-blue-500">
               BUILD_FOLIO
             </span>
-            <span className="text-xs px-2.5 py-1 border border-cyan-500/40 bg-cyan-950/40 text-cyan-400 font-normal tracking-widest self-center">
-              v2.4_STABLE
+            <span className="text-xs px-2.5 py-1 border border-cyan-500/40 bg-cyan-950/40 text-cyan-400 font-normal tracking-widest self-center ">
+               v1.0.0_STABLE
             </span>
           </h2>
 
           <p className="mt-4 text-zinc-400 max-w-3xl text-sm sm:text-base leading-relaxed font-sans">
-            We are redefining how developers present their engineering work. Static PDFs and plain resume templates are obsolete. 
-            Build_Folio combines GPU-accelerated 3D visuals, fluid motion physics, and modern Next.js 16 architecture to build portfolio experiences that demand attention.
+            We are building a collaborative developer ecosystem where students, developers, and innovators learn, create, and grow together. Through hands-on sessions in Web Development, App Development, IoT, Robotics, AI, and Open Source, we transform ideas into real-world solutions while fostering innovation, collaboration, and technical excellence.
           </p>
         </div>
 
@@ -311,13 +318,13 @@ export default function AboutSection() {
                         {pillar.icon}
                       </div>
                       <span className="text-xs font-mono text-[#c6f806] bg-[#c6f806]/10 px-2.5 py-1 border border-[#c6f806]/30">
-                        {pillar.id} // {pillar.category}
+                        {pillar.id} // {pillar.category.toUpperCase()}
                       </span>
                     </div>
 
                     <div>
                       <h3 className="text-lg font-bold tracking-wider text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                        {pillar.title}
+                        {pillar.title.toUpperCase()}
                       </h3>
                       <p className="text-xs sm:text-sm text-zinc-400 font-sans leading-relaxed mb-6">
                         {pillar.description}
@@ -468,7 +475,7 @@ export default function AboutSection() {
                         </span>
                       </div>
 
-                      <h4 className="text-base sm:text-lg font-bold text-white mb-2">{item.title}</h4>
+                      <h4 className="text-base sm:text-lg font-bold text-white mb-2">{item.title.toUpperCase()}</h4>
                       <p className="text-xs sm:text-sm text-zinc-400 font-sans leading-relaxed">
                         {item.details}
                       </p>
@@ -509,13 +516,13 @@ export default function AboutSection() {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <h4 className="text-base font-bold text-white group-hover:text-[#c6f806] transition-colors">
-                          {member.name}
+                          {member.name.toUpperCase()}
                         </h4>
                         <span className="text-[9px] text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5">
-                          ● {member.status}
+                          ● {member.status.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-[11px] text-cyan-400 font-mono mb-3">{member.role}</div>
+                      <div className="text-[11px] text-cyan-400 font-mono mb-3">{member.role.toUpperCase()}</div>
                       <p className="text-xs text-zinc-400 font-sans leading-relaxed mb-4">
                         {member.bio}
                       </p>
