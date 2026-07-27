@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { GoogleTagManager } from "@next/third-parties/google";
+import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 
@@ -30,6 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <GoogleTagManager gtmId="GTM-P42ZLM3Q" />
+      <GoogleAnalytics gaId="G-LGG66FB51X" />
       <body className="min-h-full flex flex-col">
         <Navbar />
         {children}
