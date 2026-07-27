@@ -166,9 +166,9 @@ const FAQS = [
       "KutumbX is a developer community where members learn, build projects, explore IoT & robotics, collaborate on open source, attend workshops and hackathons, and grow together through hands-on learning and mentorship.",
   },
   {
-    question: "IS BUILD_FOLIO FREE AND OPEN SOURCE?",
+    question: "IS KutumbX FREE AND OPEN SOURCE?",
     answer:
-      "Yes! Build_Folio core templates, components, and community labs are 100% free and open-source under the MIT license. Anyone can clone, customize, and deploy their portfolio.",
+      "Yes! KutumbX core templates, components, and community labs are 100% free and open-source under the MIT license. Anyone can clone, customize, and deploy their portfolio.",
   },
   {
     question: "HOW DO I FEATURE MY PORTFOLIO IN THE COMMUNITY SHOWCASE?",
@@ -198,7 +198,7 @@ export default function AboutSection() {
   const [copiedManifesto, setCopiedManifesto] = useState(false);
 
   const handleCopyManifesto = () => {
-    const manifestoText = `BUILD_FOLIO // SYS_MANIFESTO\nWe believe developer portfolios shouldn't be boring static resumes. Build_Folio exists to merge high-performance WebGL, cyber aesthetics, and modern React 19 engineering to give creators the platform they deserve.`;
+    const manifestoText = `KUTUMBX // SYS_MANIFESTO\nWe believe developer portfolios shouldn't be boring static resumes. KutumbX exists to merge high-performance WebGL, cyber aesthetics, and modern React 19 engineering to give creators the platform they deserve.`;
     navigator.clipboard.writeText(manifestoText);
     setCopiedManifesto(true);
     setTimeout(() => setCopiedManifesto(false), 2500);
@@ -230,7 +230,7 @@ export default function AboutSection() {
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white flex flex-wrap items-center gap-3">
             <span>ABOUT</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#c6f806] via-cyan-400 to-blue-500">
-              BUILD_FOLIO
+              KUTUMBX
             </span>
             <span className="text-xs px-2.5 py-1 border border-cyan-500/40 bg-cyan-950/40 text-cyan-400 font-normal tracking-widest self-center ">
                v1.0.0_STABLE
@@ -351,7 +351,7 @@ export default function AboutSection() {
                   <div className="text-xs text-cyan-400 tracking-widest">// THE CYBERPUNK MANIFESTO</div>
                   <h4 className="text-xl font-bold text-white">"Code is art. Your portfolio should be proof."</h4>
                   <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                    Build_Folio was created to bridge the gap between creative visual code and modern software engineering. We believe every developer's online presence should reflect their dedication to craft.
+                    KutumbX was created to bridge the gap between creative visual code and modern software engineering. We believe every developer's online presence should reflect their dedication to craft.
                   </p>
                 </div>
 
@@ -589,7 +589,7 @@ export default function AboutSection() {
               READY TO BUILD YOUR DIGITAL LEGACY?
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 font-sans max-w-xl">
-              Join thousands of developers crafting ultra-modern 3D portfolios and WebGL experiences with Build_Folio.
+              Join thousands of developers crafting ultra-modern 3D portfolios and WebGL experiences with KutumbX.
             </p>
           </div>
 
