@@ -121,6 +121,8 @@ export default function ContactSection() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const skillsScrollRef = useRef<HTMLDivElement>(null);
+  const devVideoRef = useRef<HTMLVideoElement>(null);
+  const [isDevVideoMuted, setIsDevVideoMuted] = useState(false);
 
   const handleCopyEmail = (email: string) => {
     navigator.clipboard.writeText(email);
@@ -132,6 +134,14 @@ export default function ContactSection() {
     setIsDevCyberActive(true);
     setBiometricToast(true);
     setIsDevModalOpen(true);
+    setIsDevVideoMuted(false);
+
+    if (devVideoRef.current) {
+      devVideoRef.current.muted = false;
+      devVideoRef.current.play().catch(() => {
+        // Fallback if browser blocks unmuted playback
+      });
+    }
 
     // Spawn 10 Cyber particles radiating outward
     const newParticles: Particle[] = Array.from({ length: 10 }).map((_, index) => {
@@ -628,19 +638,32 @@ export default function ContactSection() {
                   <div className="lg:col-span-5 space-y-4">
                     <div className="text-xs text-cyan-400 tracking-widest uppercase">// FEATURED_MEDIA_STREAM</div>
                     
-                    {/* Cyber Video Container */}
+                    {/* Cyber Video Container (No default player controls overlay) */}
                     <div className="relative rounded bg-black border border-cyan-500/40 p-2 shadow-[0_0_25px_rgba(6,182,212,0.2)] overflow-hidden group">
-                      <div className="absolute top-3 left-3 z-10 text-[9px] font-mono text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-2 py-0.5">
+                      <div className="absolute top-3 left-3 z-10 text-[9px] font-mono text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-2 py-0.5 pointer-events-none">
                         LIVE_FEED // 1080P
                       </div>
 
+                      {/* Custom Cyber Audio Toggle Button */}
+                      <button
+                        onClick={() => {
+                          if (devVideoRef.current) {
+                            devVideoRef.current.muted = !devVideoRef.current.muted;
+                            setIsDevVideoMuted(devVideoRef.current.muted);
+                          }
+                        }}
+                        className="absolute top-3 right-3 z-10 text-[9px] font-mono text-[#c6f806] bg-zinc-950/90 border border-[#c6f806]/40 px-2.5 py-1 hover:bg-[#c6f806] hover:text-black transition-all cursor-pointer font-bold"
+                        title="Toggle Audio"
+                      >
+                        {isDevVideoMuted ? "🔇 AUDIO: OFF" : "🔊 AUDIO: ON"}
+                      </button>
+
                       <video
+                        ref={devVideoRef}
                         src="/images/get_me_only_second_video_and.mp4"
                         autoPlay
                         loop
-                        muted
                         playsInline
-                        controls
                         className="w-full h-auto rounded border border-zinc-800 object-cover max-h-[360px]"
                       />
                     </div>
